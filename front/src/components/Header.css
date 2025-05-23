@@ -1,0 +1,12 @@
+.header {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.avatar {
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.navbar-brand img {
+  margin-right: 8px;
+}
