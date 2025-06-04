@@ -4,7 +4,19 @@ from app.models import Forum
 
 @api.route('/forums', methods=['GET'])
 def get_forums():
-    forums = Forum.query.all()
+    sort_by = request.args.get('sort_by', 'latest', type=str)
+
+    query = Forum.query
+
+    if sort_by == 'latest':
+        # 默认按ID排序，或者您可以根据需求调整默认排序
+        query = query.order_by(Forum.id.asc())
+    elif sort_by == 'popular':
+        # 按帖子数量降序排序
+        query = query.order_by(Forum.post_count.desc())
+    # 可以添加更多排序选项
+
+    forums = query.all()
     return jsonify({
         'forums': [forum.to_dict() for forum in forums]
     })

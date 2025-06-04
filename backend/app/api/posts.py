@@ -10,11 +10,21 @@ from . import api
 def get_posts():
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 20, type=int)
-    
-    pagination = Post.query.order_by(Post.created_at.desc()).paginate(
+    sort_by = request.args.get('sort_by', 'latest', type=str)
+
+    query = Post.query
+
+    if sort_by == 'latest':
+        query = query.order_by(Post.created_at.desc())
+    elif sort_by == 'popular':
+        # 示例：按点赞数降序排序，您可以根据需求调整排序规则
+        query = query.order_by(Post.like_count.desc())
+    # 可以添加更多排序选项，如按评论数、浏览数等
+
+    pagination = query.paginate(
         page=page, per_page=per_page, error_out=False
     )
-    
+
     return jsonify({
         'posts': [post.to_dict() for post in pagination.items],
         'total': pagination.total,

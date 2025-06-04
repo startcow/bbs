@@ -1,8 +1,7 @@
--- 添加测试用户
-INSERT INTO users (username, email, password_hash, nickname, role) VALUES
-('admin', 'admin@example.com', 'pbkdf2:sha256:123456', '系统管理员', 'admin'),
-('moderator', 'mod@example.com', 'pbkdf2:sha256:123456', '版主小王', 'moderator'),
-('user1', 'user1@example.com', 'pbkdf2:sha256:123456', '热心同学', 'user');
+-- 设置连接字符集
+SET NAMES utf8mb4;
+SET CHARACTER SET utf8mb4;
+SET character_set_connection=utf8mb4;
 
 -- 论坛初始数据
 INSERT INTO forums (name, description, icon, post_count) VALUES 
@@ -29,3 +28,6 @@ INSERT INTO comments (content, user_id, post_id, like_count) VALUES
 ('感谢通知！', 3, 1, 5),
 ('已帮你留意，如果看到会联系你', 2, 2, 3),
 ('哈哈确实很有趣', 1, 3, 8);
+
+SET FOREIGN_KEY_CHECKS = 0;
+SET FOREIGN_KEY_CHECKS = 1;
