@@ -1,157 +1,171 @@
-import React, { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
-
-// 模拟帖子数据
-const mockPost = {
-  id: 1,
-  title: "期末复习资料分享",
-  content: `大家好！期末考试快到了，我整理了一些复习资料想和大家分享。
-
-包含以下内容：
-1. 高等数学重点知识点总结
-2. 线性代数习题集
-3. 概率论与数理统计复习笔记
-4. 历年真题及答案解析
-
-希望对大家的复习有帮助！有需要的同学可以私信我，或者在评论区留言。
-
-祝大家期末考试顺利！🎉`,
-  author: {
-    id: 1,
-    username: "学霸一号",
-    avatar: "/avatar1.jpg",
-    level: "资深会员"
-  },
-  forum: {
-    id: 1,
-    name: "课程交流",
-    color: "primary"
-  },
-  createdAt: "2023-06-15 14:30",
-  views: 1256,
-  likes: 156,
-  isLiked: false,
-  isFavorited: false,
-  tags: ["复习资料", "期末考试", "数学"]
-};
-
-// 模拟评论数据
-const mockComments = [
-  {
-    id: 1,
-    content: "太感谢了！正好需要这些资料",
-    author: {
-      id: 2,
-      username: "努力学习中",
-      avatar: "/avatar2.jpg"
-    },
-    createdAt: "2023-06-15 15:20",
-    likes: 12,
-    isLiked: false,
-    replies: [
-      {
-        id: 11,
-        content: "我也需要，楼主人真好！",
-        author: {
-          id: 3,
-          username: "小白同学",
-          avatar: "/avatar3.jpg"
-        },
-        createdAt: "2023-06-15 16:10",
-        likes: 3,
-        isLiked: false
-      }
-    ]
-  },
-  {
-    id: 2,
-    content: "请问有英语复习资料吗？",
-    author: {
-      id: 4,
-      username: "英语苦手",
-      avatar: "/avatar4.jpg"
-    },
-    createdAt: "2023-06-15 16:45",
-    likes: 8,
-    isLiked: false,
-    replies: []
-  }
-];
+import React, { useState, useEffect } from 'react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+import { canManagePost, canManageComment } from '../utils/permissions';
+import { 
+  getPost, 
+  getPostComments, 
+  likePost, 
+  favoritePost,
+  deletePost,
+  setTopPost,
+  setEssencePost,
+  createComment,
+  deleteComment,
+  replyComment
+} from '../api/posts';
 
 const PostDetailPage = () => {
   const { id } = useParams();
-  const [post, setPost] = useState(mockPost);
-  const [comments, setComments] = useState(mockComments);
+  const navigate = useNavigate();
+  const { user } = useSelector(state => state.auth);
+  const [post, setPost] = useState(null);
+  const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
   const [replyTo, setReplyTo] = useState(null);
   const [replyContent, setReplyContent] = useState('');
-
-  const handleLike = () => {
-    setPost(prev => ({
-      ...prev,
-      isLiked: !prev.isLiked,
-      likes: prev.isLiked ? prev.likes - 1 : prev.likes + 1
-    }));
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);  useEffect(() => {  const fetchPost = async () => {
+      try {
+        setLoading(true);
+        const response = await getPost(id);
+        console.log('获取到的帖子数据:', response);
+        const postData = {
+          ...response,
+          isLiked: response.isLiked || false,
+          like_count: response.like_count || 0
+        };
+        setPost(postData);
+        const commentsResponse = await getPostComments(id);
+        
+        const comments = (commentsResponse && commentsResponse.comments) ? commentsResponse.comments : [];
+        console.log('获取到的评论数据:', comments);
+        setComments(comments);
+        setLoading(false);
+      } catch (err) {
+        setError(err.message || '加载失败');
+        setLoading(false);
+      }
+    };
+    fetchPost();
+  }, [id]);  
+  const handleLike = async () => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    try {
+      const response = await likePost(id);
+      setPost(prev => ({
+        ...prev,
+        isLiked: !prev.isLiked,
+        like_count: response.is_liked ? prev.like_count + 1 : prev.like_count - 1
+      }));
+    } catch (err) {
+      console.error('点赞失败:', err);
+    }
   };
-
-  const handleFavorite = () => {
-    setPost(prev => ({
-      ...prev,
-      isFavorited: !prev.isFavorited
-    }));
-  };
-
-  const handleCommentSubmit = (e) => {
-    e.preventDefault();
-    if (newComment.trim()) {
-      const comment = {
-        id: Date.now(),
-        content: newComment,
-        author: {
-          id: 999,
-          username: "当前用户",
-          avatar: "/avatar-default.jpg"
-        },
-        createdAt: new Date().toLocaleString(),
-        likes: 0,
-        isLiked: false,
-        replies: []
-      };
-      setComments(prev => [...prev, comment]);
-      setNewComment('');
+  const handleFavorite = async () => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    try {
+      const response = await favoritePost(id);
+      setPost(prev => ({
+        ...prev,
+        isFavorited: !prev.isFavorited,
+        favorite_count: response.is_favorited ? prev.favorite_count + 1 : prev.favorite_count - 1
+      }));
+    } catch (err) {
+      console.error('收藏失败:', err);
     }
   };
 
-  const handleReplySubmit = (commentId) => {
-    if (replyContent.trim()) {
-      const reply = {
-        id: Date.now(),
-        content: replyContent,
-        author: {
-          id: 999,
-          username: "当前用户",
-          avatar: "/avatar-default.jpg"
-        },
-        createdAt: new Date().toLocaleString(),
-        likes: 0,
-        isLiked: false
-      };
-      
+  const handleShare = async () => {
+    try {
+      // 如果是移动设备，使用原生分享
+      if (navigator.share) {
+        await navigator.share({
+          title: post.title,
+          text: post.content.substring(0, 100) + '...',
+          url: window.location.href
+        });
+      } else {
+        // 复制链接到剪贴板
+        await navigator.clipboard.writeText(window.location.href);
+        alert('链接已复制到剪贴板');
+      }
+    } catch (err) {
+      console.error('分享失败:', err);
+    }
+  };  const handleCommentSubmit = async (e) => {
+    e.preventDefault();
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    if (!newComment.trim()) return;
+      try {
+      const response = await createComment(id, newComment);
+      if (response.message === '评论成功') {
+        setComments(prev => [...prev, response.comment]);
+        setNewComment('');
+        alert('评论发表成功！');
+      }
+    } catch (err) {
+      console.error('评论失败:', err);
+    }
+  };
+
+  const handleReplySubmit = async (commentId) => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    if (!replyContent.trim()) return;
+    
+    try {
+      const response = await replyComment(commentId, replyContent);
       setComments(prev => prev.map(comment => 
         comment.id === commentId 
-          ? { ...comment, replies: [...comment.replies, reply] }
+          ? { ...comment, replies: [...comment.replies, response.data] }
           : comment
-      ));
-      setReplyContent('');
+      ));      setReplyContent('');
       setReplyTo(null);
+      alert('回复成功！');
+    } catch (err) {
+      console.error('回复失败:', err);
     }
   };
+  const handleDeletePost = async () => {
+    if (!window.confirm('确定要删除这个帖子吗？')) return;
+    try {
+      await delete(`/api/posts/${post.id}`);
+      navigate(`/forum/${post.forum.id}`);
+    } catch (error) {
+      console.error('删除失败:', error);
+    }
+  };
+  const handleDeleteComment = async (commentId) => {
+    if (!window.confirm('确定要删除这条评论吗？')) return;
+    try {      
+      await delete(`/api/comments/${commentId}`);
+      setComments(prev => prev.filter(c => c.id !== commentId));
+      alert('评论删除成功！');
+    } catch (error) {
+      console.error('删除失败:', error);
+    }
+  };
+
+  if (loading) return <div className="text-center py-5">加载中...</div>;
+  if (error) return <div className="alert alert-danger m-4">{error}</div>;
+  if (!post) return <div className="alert alert-info m-4">帖子不存在</div>;
 
   return (
     <div className="post-detail-page container py-4">
       <div className="row">
         <div className="col-lg-8">
-          {/* 帖子内容 */}
           <div className="card mb-4">
             <div className="card-header">
               <div className="d-flex justify-content-between align-items-center">
@@ -161,10 +175,19 @@ const PostDetailPage = () => {
                   </Link>
                   <span className="text-muted small">发布于 {post.createdAt}</span>
                 </div>
-                <div>
-                  <i className="fas fa-eye me-1"></i>
-                  <span className="text-muted small">{post.views} 浏览</span>
-                </div>
+                {canManagePost(user, post, post.forum.id) && (
+                  <div className="dropdown">
+                    <button className="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                      管理
+                    </button>
+                    <ul className="dropdown-menu dropdown-menu-end">
+                      {/* <li><button className="dropdown-item" onClick={handleSetTop}>置顶</button></li>
+                      <li><button className="dropdown-item" onClick={handleSetEssence}>设为精华</button></li> */}
+                      <li><hr className="dropdown-divider" /></li>
+                      <li><button className="dropdown-item text-danger" onClick={handleDeletePost}>删除</button></li>
+                    </ul>
+                  </div>
+                )}
               </div>
             </div>
             
@@ -178,24 +201,18 @@ const PostDetailPage = () => {
                   <small className="text-muted">{post.author.level}</small>
                 </div>
               </div>
-              
-              <div className="post-content mb-4" style={{whiteSpace: 'pre-line'}}>
+                <div className="post-content mb-4" style={{whiteSpace: 'pre-line'}}>
                 {post.content}
               </div>
               
-              <div className="post-tags mb-3">
-                {post.tags.map((tag, index) => (
-                  <span key={index} className="badge bg-light text-dark me-1">#{tag}</span>
-                ))}
-              </div>
-              
-              <div className="post-actions d-flex gap-2">
-                <button 
+              <div className="post-actions d-flex gap-2">                <button 
                   className={`btn ${post.isLiked ? 'btn-primary' : 'btn-outline-primary'}`}
                   onClick={handleLike}
+                  disabled={!user}
                 >
                   <i className={`${post.isLiked ? 'fas' : 'far'} fa-thumbs-up me-1`}></i>
-                  {post.likes}
+                  {post.like_count || 0}
+                  {post.isLiked && <span className="ms-1">已点赞</span>}
                 </button>
                 <button 
                   className={`btn ${post.isFavorited ? 'btn-warning' : 'btn-outline-warning'}`}
@@ -203,8 +220,10 @@ const PostDetailPage = () => {
                 >
                   <i className={`${post.isFavorited ? 'fas' : 'far'} fa-star me-1`}></i>
                   {post.isFavorited ? '已收藏' : '收藏'}
-                </button>
-                <button className="btn btn-outline-secondary">
+                </button>                <button 
+                  className="btn btn-outline-secondary"
+                  onClick={handleShare}
+                >
                   <i className="fas fa-share me-1"></i>分享
                 </button>
               </div>
@@ -242,7 +261,7 @@ const PostDetailPage = () => {
                 {comments.map(comment => (
                   <div key={comment.id} className="comment-item border-bottom pb-3 mb-3">
                     <div className="d-flex align-items-start">
-                      <img src={comment.author.avatar} alt={comment.author.username} className="rounded-circle me-3" width="40" height="40" onError={(e) => e.target.src = '/avatar-default.jpg'} />
+                      <img src={comment.author.avatar} alt={comment.author.username} className="rounded-circle me-3" width="40" height="40" />
                       <div className="flex-grow-1">
                         <div className="d-flex justify-content-between align-items-center mb-2">
                           <div>
@@ -252,13 +271,19 @@ const PostDetailPage = () => {
                           <div>
                             <button className="btn btn-sm btn-outline-primary me-1">
                               <i className="far fa-thumbs-up me-1"></i>{comment.likes}
-                            </button>
-                            <button 
-                              className="btn btn-sm btn-outline-secondary"
+                            </button>                            <button 
+                              className="btn btn-sm btn-outline-secondary me-1"
                               onClick={() => setReplyTo(comment.id)}
                             >
                               回复
-                            </button>
+                            </button> {user && ((user.id) === (comment.user_id) || (post.forum?.moderators?.includes(Number(user.id)))) && (
+                              <button
+                                className="btn btn-sm btn-outline-danger"
+                                onClick={() => handleDeleteComment(comment.id)}
+                              >
+                                删除
+                              </button>
+                            )}
                           </div>
                         </div>
                         <p className="mb-2">{comment.content}</p>

@@ -1,18 +1,26 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Navbar, Nav, Container, Form, Button, NavDropdown } from 'react-bootstrap';
-import './Header.css';
+import { useSelector, useDispatch } from 'react-redux';
+import { logout } from '../store/slices/authSlice';
+import '../styles/Header.css'; 
 
 const Header = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
-  const [isLoggedIn, setIsLoggedIn] = useState(false); // 模拟登录状态
+  const dispatch = useDispatch();
+  const { user } = useSelector(state => state.auth);
 
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
       navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
     }
+  };
+
+  const handleLogout = () => {
+    dispatch(logout());
+    navigate('/');
   };
 
   return (
@@ -33,7 +41,7 @@ const Header = () => {
           >
             <span style={{ color: 'white', fontWeight: 'bold', fontSize: '16px' }}>BBS</span>
           </div>
-          <span className="fw-bold text-primary">校园BBS</span>
+          <span className="fw-bold text-primary">果壳校园</span>
         </Navbar.Brand>
 
         <Navbar.Toggle aria-controls="basic-navbar-nav" />
@@ -57,7 +65,7 @@ const Header = () => {
           </Form>
 
           <div className="d-flex align-items-center">
-            {isLoggedIn ? (
+            {user ? (
               <NavDropdown 
                 title={
                   <div className="d-flex align-items-center">
@@ -74,19 +82,19 @@ const Header = () => {
                       }}
                     >
                       <span style={{ color: 'white', fontWeight: 'bold' }}>
-                        U
+                        {user.nickname?.[0] || user.username[0]}
                       </span>
                     </div>
-                    用户
+                    {user.nickname || user.username}
                   </div>
                 }
                 id="user-dropdown"
               >
-                <NavDropdown.Item href="#">个人中心</NavDropdown.Item>
-                <NavDropdown.Item href="#">我的帖子</NavDropdown.Item>
-                <NavDropdown.Item href="#">设置</NavDropdown.Item>
+                <NavDropdown.Item as={Link} to="/profile">个人中心</NavDropdown.Item>
+                <NavDropdown.Item as={Link} to="/my/posts">我的帖子</NavDropdown.Item>
+                <NavDropdown.Item as={Link} to="/settings">设置</NavDropdown.Item>
                 <NavDropdown.Divider />
-                <NavDropdown.Item onClick={() => setIsLoggedIn(false)}>
+                <NavDropdown.Item onClick={handleLogout}>
                   退出登录
                 </NavDropdown.Item>
               </NavDropdown>

@@ -1,8 +1,12 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
 import { Container, Row, Col, Card, Form, Button, Alert } from 'react-bootstrap';
+import storage from '../utils/storage';
+import { login } from '../api/auth';
 
 const LoginPage = () => {
+  const dispatch = useDispatch();
   const [formData, setFormData] = useState({
     username: '',
     password: '',
@@ -36,14 +40,33 @@ const LoginPage = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  const handleSubmit = async (e) => {
+    e.preventDefault();    
     if (validateForm()) {
-      // 这里应该调用登录API
-      console.log('登录数据:', formData);
-      // 模拟登录成功
-      alert('登录成功！');
-      navigate('/');
+      try {
+        const response = await login({
+          username: formData.username,
+          password: formData.password
+        });
+        // console.log('登录成功:', response);
+        storage.setItem('token', response.access_token);
+        storage.setItem('user', response.user);
+        dispatch({ type: 'auth/setUser', payload: response.user });
+        
+        if (formData.rememberMe) {
+          storage.setItem('rememberMe', true);
+          storage.setItem('savedUsername', formData.username);
+        } else {
+          storage.removeItem('rememberMe');
+          storage.removeItem('savedUsername');
+        }
+        
+        navigate('/');
+      } catch (error) {
+        setErrors({
+          general: error.message || '登录失败，请检查用户名和密码'
+        });
+      }
     }
   };
 
@@ -54,6 +77,11 @@ const LoginPage = () => {
           <Col md={6} lg={4}>
             <Card className="shadow-lg border-0" style={{ borderRadius: '20px' }}>
               <Card.Body className="p-5">
+                {errors.general && (
+                  <Alert variant="danger" className="mb-3">
+                    {errors.general}
+                  </Alert>
+                )}
                 <div className="text-center mb-4">
                   <div 
                     style={{
@@ -69,7 +97,7 @@ const LoginPage = () => {
                   >
                     <span style={{ color: 'white', fontSize: '2rem', fontWeight: 'bold' }}>🎓</span>
                   </div>
-                  <h2 className="h4" style={{ color: '#667eea' }}>登录校园BBS</h2>
+                  <h2 className="h4" style={{ color: '#667eea' }}>登录果壳校园</h2>
                   <p className="text-muted">欢迎回来！请登录您的账户</p>
                 </div>
 
@@ -139,19 +167,6 @@ const LoginPage = () => {
                 </div>
 
                 <hr className="my-4" />
-
-                <div className="text-center">
-                  <p className="text-muted small mb-3">或使用第三方登录</p>
-                  <div className="d-grid gap-2">
-                    <Button variant="outline-success" style={{ borderRadius: '15px' }}>
-                      💬 微信登录
-                    </Button>
-                    <Button variant="outline-info" style={{ borderRadius: '15px' }}>
-                      🐧 QQ登录
-                    </Button>
-                  </div>
-                </div>
-
                 <div className="text-center mt-4">
                   <p className="text-muted small">
                     还没有账户？

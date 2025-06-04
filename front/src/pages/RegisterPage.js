@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { register } from '../api/auth';
 
 const RegisterPage = () => {
   const [formData, setFormData] = useState({
@@ -26,10 +27,7 @@ const RegisterPage = () => {
     
     if (!formData.studentId.trim()) {
       newErrors.studentId = '请输入学号';
-    } else if (!/^\d{8,12}$/.test(formData.studentId)) {
-      newErrors.studentId = '学号格式不正确';
     }
-    
     if (!formData.username.trim()) {
       newErrors.username = '请输入用户名';
     } else if (formData.username.length < 2) {
@@ -61,15 +59,23 @@ const RegisterPage = () => {
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (validateForm()) {
-      // 这里应该调用注册API
-      console.log('注册数据:', formData);
-      // 模拟注册成功
-      alert('注册成功！请登录');
-      navigate('/login');
+      try {
+        await register({
+          studentId: formData.studentId,
+          username: formData.username,
+          email: formData.email,
+          password: formData.password
+        });
+        alert('注册成功！请登录');
+        navigate('/login');
+      } catch (error) {
+        setErrors({
+          general: error.response?.data?.message || '注册失败，请重试'
+        });
+      }
     }
   };
 
@@ -81,7 +87,7 @@ const RegisterPage = () => {
             <div className="card shadow">
               <div className="card-body p-5">
                 <div className="text-center mb-4">
-                  <h2 className="text-primary">注册校园BBS</h2>
+                  <h2 className="text-primary">注册果壳校园</h2>
                   <p className="text-muted">加入我们，开启精彩的校园生活</p>
                 </div>
                 
@@ -198,7 +204,7 @@ const RegisterPage = () => {
                 <hr className="my-4" />
                 
                 {/* 第三方注册 */}
-                <div className="text-center mb-3">
+                {/* <div className="text-center mb-3">
                   <p className="text-muted mb-3">或使用以下方式快速注册</p>
                   <div className="d-grid gap-2">
                     <button className="btn btn-outline-success">
@@ -208,7 +214,7 @@ const RegisterPage = () => {
                       <i className="fab fa-qq me-2"></i>QQ注册
                     </button>
                   </div>
-                </div>
+                </div> */}
                 
                 <div className="text-center">
                   <span className="text-muted">已有账号？</span>

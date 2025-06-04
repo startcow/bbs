@@ -1,9 +1,10 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
-import { Container, Row, Col, Card, Badge, Button, ListGroup } from 'react-bootstrap';
-import './HomePage.css';
+import { Link, useNavigate } from 'react-router-dom';
+import { Container, Row, Col, Card, Badge, Button, ListGroup, NavDropdown } from 'react-bootstrap';
+import { useSelector, useDispatch } from 'react-redux';
+import { logout } from '../store/slices/authSlice';
+import '../styles/HomePage.css'; 
 
-// 模拟数据
 const hotPosts = [
   { id: 1, title: "期末复习资料分享", author: "学霸一号", forum: "课程交流", comments: 42, likes: 156, time: "2小时前" },
   { id: 2, title: "校园歌手大赛报名开始啦", author: "活动组织者", forum: "校园活动", comments: 28, likes: 95, time: "4小时前" },
@@ -28,6 +29,10 @@ const announcements = [
 ];
 
 const HomePage = () => {
+  const { user } = useSelector(state => state.auth);
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
   return (
     <div className="homepage">
       {/* 顶部横幅 */}
@@ -36,18 +41,26 @@ const HomePage = () => {
           <Row className="align-items-center">
             <Col lg={6}>
               <h1 className="display-4 fw-bold text-white mb-4">
-                欢迎来到校园BBS
+                欢迎来到果壳校园
               </h1>
               <p className="lead text-white-50 mb-4">
                 连接校园，分享生活，交流学习，这里是属于我们的数字校园社区
               </p>
               <div className="d-flex gap-3">
-                <Button as={Link} to="/register" variant="light" size="lg">
-                  立即加入
-                </Button>
-                <Button as={Link} to="/forums" variant="outline-light" size="lg">
-                  浏览板块
-                </Button>
+                {!user ? (
+                  <>
+                    <Button as={Link} to="/register" variant="light" size="lg">
+                      立即加入
+                    </Button>
+                    <Button as={Link} to="/forums" variant="outline-light" size="lg">
+                      浏览板块
+                    </Button>
+                  </>
+                ) : (
+                  <Button as={Link} to="/forums" variant="light" size="lg">
+                    发布内容
+                  </Button>
+                )}
               </div>
             </Col>
             <Col lg={6}>
@@ -66,7 +79,7 @@ const HomePage = () => {
               >
                 <div className="text-center text-white">
                   <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🎓</div>
-                  <h3>校园BBS</h3>
+                  <h3>果壳校园</h3>
                   <p>连接每一个校园故事</p>
                 </div>
               </div>

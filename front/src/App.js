@@ -11,6 +11,10 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import PostDetailPage from './pages/PostDetailPage';
 import SearchResultPage from './pages/SearchResultPage';
+import ForumDetailPage from './pages/ForumDetailPage';
+import CreatePostPage from './pages/CreatePostPage';
+import ProfileSettingsPage from './pages/ProfileSettingsPage';
+import ProfilePage from './pages/ProfilePage';
 
 function App() {
   return (
@@ -25,6 +29,10 @@ function App() {
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/post/:id" element={<PostDetailPage />} />
             <Route path="/search" element={<SearchResultPage />} />
+            <Route path="/forum/:id" element={<ForumDetailPage />} />
+            <Route path="/create-post" element={<CreatePostPage />} />
+            <Route path="/settings" element={<ProfileSettingsPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
           </Routes>
         </main>
         <Footer />

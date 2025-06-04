@@ -1,0 +1,8 @@
+backend/venv/
+.env/
+*.py[cod]
+__pycache__/
+*.so
+.Python
+*.egg-info/
+*.egg

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Container, Row, Col } from 'react-bootstrap';
-import './Footer.css';
+import '../styles/Footer.css'; // 确保你有这个CSS文件来定义样式
 
 const Footer = () => {
   return (
@@ -11,7 +11,7 @@ const Footer = () => {
           <Col md={3}>
             <h5 className="text-white mb-3">关于我们</h5>
             <ul className="list-unstyled">
-              <li className="mb-2"><a href="#" className="text-light text-decoration-none">关于校园BBS</a></li>
+              <li className="mb-2"><a href="#" className="text-light text-decoration-none">关于果壳校园</a></li>
               <li className="mb-2"><a href="#" className="text-light text-decoration-none">联系我们</a></li>
               <li className="mb-2"><a href="#" className="text-light text-decoration-none">加入我们</a></li>
               <li className="mb-2"><a href="#" className="text-light text-decoration-none">隐私政策</a></li>
@@ -55,9 +55,6 @@ const Footer = () => {
         <hr className="my-4 border-secondary" />
         
         <Row className="align-items-center">
-          <Col md={6}>
-            <p className="text-muted mb-0">&copy; 2024 校园BBS. 保留所有权利.</p>
-          </Col>
           <Col md={6} className="text-md-end">
             <small className="text-muted">
               <a href="#" className="text-light text-decoration-none me-3">服务条款</a>
