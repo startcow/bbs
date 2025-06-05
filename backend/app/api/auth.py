@@ -9,7 +9,6 @@ auth = Blueprint('auth', __name__)
 @api.route('/register', methods=['POST'])
 def register():
     data = request.get_json()
-    print(data)
     if User.query.filter_by(username=data['username']).first():
         return jsonify({'message': '用户名已存在'}), 400
         
@@ -29,16 +28,21 @@ def register():
 @api.route('/login', methods=['POST'])
 def login():
     data = request.get_json()
+    if not data or 'username' not in data or 'password' not in data:
+        return jsonify({'message': '请提供用户名和密码'}), 400
+        
     user = User.query.filter_by(username=data['username']).first()
-    print(user.id)
-    if user and user.verify_password(data['password']):
-        access_token = create_access_token(identity=str(user.id))
-        return jsonify({
-            'access_token': access_token,
-            'user': user.to_dict()
-        }), 200
-    
-    return jsonify({'message': '用户名或密码错误'}), 401
+    if not user:
+        return jsonify({'message': '用户名或密码错误'}), 401
+        
+    if not user.verify_password(data['password']):
+        return jsonify({'message': '用户名或密码错误'}), 401
+        
+    access_token = create_access_token(identity=str(user.id))
+    return jsonify({
+        'access_token': access_token,
+        'user': user.to_dict()
+    }), 200
 
 @api.route('/profile', methods=['GET'])
 @jwt_required()

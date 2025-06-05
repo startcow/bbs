@@ -14,11 +14,12 @@ const ForumDetailPage = () => {
   const [error, setError] = useState(null);
   const [sortBy, setSortBy] = useState('latest');
   const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [showModeratorModal, setShowModeratorModal] = useState(false);
   useEffect(() => {
     const fetchForumData = async () => {
-      try {        
-        setLoading(true);          
+      try {
+        setLoading(true);
         const forumResponse = await getForum(id);
         const postsResponse = await getForumPosts(id, {
           page,
@@ -26,8 +27,10 @@ const ForumDetailPage = () => {
           sort_by: sortBy
         });
         console.log('获取到的板块数据:', postsResponse.posts);
+        console.log('后端返回的总页数:', postsResponse.pages);
         setForum(forumResponse);
         setPosts(postsResponse.posts);
+        setTotalPages(postsResponse.pages);
         setLoading(false);
       } catch (err) {
         setError(err.message || '加载失败');
@@ -49,7 +52,7 @@ const ForumDetailPage = () => {
   };
   const handleRemoveModerator = async (moderatorId) => {
     if (!window.confirm('确定要移除该版主吗？')) return;
-    
+
     try {
       await removeModerator(id, moderatorId);
       // 重新获取板块信息以更新版主列表
@@ -70,14 +73,14 @@ const ForumDetailPage = () => {
       <div className="card mb-4">
         <div className="card-body">
           <div className="d-flex align-items-center mb-3">
-            <div className={`forum-icon bg-${forum.color} text-white rounded-circle d-flex align-items-center justify-content-center me-3`} style={{width: '60px', height: '60px'}}>
+            <div className={`forum-icon bg-${forum.color} text-white rounded-circle d-flex align-items-center justify-content-center me-3`} style={{ width: '60px', height: '60px' }}>
               <i className={`fas ${forum.icon} fa-2x`}></i>
             </div>
             <div className="flex-grow-1">
               <div className="d-flex justify-content-between align-items-center">
                 <h2 className="mb-1">{forum.name}</h2>
                 {isAdmin(user) && (
-                  <button 
+                  <button
                     className="btn btn-primary btn-sm"
                     onClick={() => setShowModeratorModal(true)}
                   >
@@ -89,7 +92,7 @@ const ForumDetailPage = () => {
               <p className="text-muted mb-0">{forum.description}</p>
             </div>
           </div>
-          
+
           {/* 版主列表 */}
           <div className="moderators-section mt-3">
             <h6 className="text-muted mb-2">版主</h6>
@@ -123,7 +126,7 @@ const ForumDetailPage = () => {
 
           <div className="row text-center mt-3">
             <div className="col-4">
-              <div className="h4 mb-0">{forum.posts}</div>
+              <div className="h4 mb-0">{forum.total_post_count}</div>
               <small className="text-muted">帖子</small>
             </div>
             <div className="col-4">
@@ -141,13 +144,13 @@ const ForumDetailPage = () => {
       {/* 帖子列表工具栏 */}
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div className="btn-group">
-          <button 
+          <button
             className={`btn ${sortBy === 'latest' ? 'btn-primary' : 'btn-outline-primary'}`}
             onClick={() => setSortBy('latest')}
           >
             最新
           </button>
-          <button 
+          <button
             className={`btn ${sortBy === 'hot' ? 'btn-primary' : 'btn-outline-primary'}`}
             onClick={() => setSortBy('hot')}
           >
@@ -219,6 +222,7 @@ const ForumDetailPage = () => {
             <button
               className="page-link"
               onClick={() => setPage(prev => prev + 1)}
+              disabled={page >= totalPages}
             >
               下一页
             </button>

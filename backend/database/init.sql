@@ -2,19 +2,24 @@
 CREATE DATABASE IF NOT EXISTS bbs_dev DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE bbs_dev;
 
+-- 设置连接字符集
+SET NAMES utf8mb4;
+SET CHARACTER SET utf8mb4;
+SET character_set_connection=utf8mb4;
+
 -- 用户表
 CREATE TABLE users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(80) NOT NULL UNIQUE,
     email VARCHAR(120) NOT NULL UNIQUE,
     password_hash VARCHAR(128) NOT NULL,
-    nickname VARCHAR(80),
+    nickname VARCHAR(100),
     avatar VARCHAR(200),
     is_active BOOLEAN DEFAULT TRUE,
     role ENUM('user', 'moderator', 'admin') DEFAULT 'user',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 板块表
 CREATE TABLE forums (
@@ -27,7 +32,7 @@ CREATE TABLE forums (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (moderator_id) REFERENCES users(id)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 帖子表
 CREATE TABLE posts (
@@ -44,7 +49,7 @@ CREATE TABLE posts (
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id),
     FOREIGN KEY (forum_id) REFERENCES forums(id)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 评论表
 CREATE TABLE comments (
@@ -59,7 +64,7 @@ CREATE TABLE comments (
     FOREIGN KEY (user_id) REFERENCES users(id),
     FOREIGN KEY (post_id) REFERENCES posts(id),
     FOREIGN KEY (parent_id) REFERENCES comments(id)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 点赞表
 CREATE TABLE likes (
@@ -70,7 +75,7 @@ CREATE TABLE likes (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id),
     UNIQUE KEY unique_like (user_id, target_type, target_id)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 点赞关联表
 CREATE TABLE IF NOT EXISTS post_likes (
@@ -80,7 +85,7 @@ CREATE TABLE IF NOT EXISTS post_likes (
     PRIMARY KEY (user_id, post_id),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 收藏关联表
 CREATE TABLE IF NOT EXISTS post_favorites (
@@ -90,14 +95,14 @@ CREATE TABLE IF NOT EXISTS post_favorites (
     PRIMARY KEY (user_id, post_id),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 标签表
 CREATE TABLE tags (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(50) NOT NULL UNIQUE,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 帖子标签关联表
 CREATE TABLE post_tags (
@@ -107,7 +112,7 @@ CREATE TABLE post_tags (
     PRIMARY KEY (post_id, tag_id),
     FOREIGN KEY (post_id) REFERENCES posts(id),
     FOREIGN KEY (tag_id) REFERENCES tags(id)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 通知表
 CREATE TABLE notifications (
@@ -119,7 +124,7 @@ CREATE TABLE notifications (
     related_id INT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 创建索引
 CREATE INDEX idx_posts_forum ON posts(forum_id);

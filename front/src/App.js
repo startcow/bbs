@@ -15,6 +15,7 @@ import ForumDetailPage from './pages/ForumDetailPage';
 import CreatePostPage from './pages/CreatePostPage';
 import ProfileSettingsPage from './pages/ProfileSettingsPage';
 import ProfilePage from './pages/ProfilePage';
+import PostListPage from './pages/PostListPage';
 
 function App() {
   return (
@@ -33,6 +34,7 @@ function App() {
             <Route path="/create-post" element={<CreatePostPage />} />
             <Route path="/settings" element={<ProfileSettingsPage />} />
             <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/posts" element={<PostListPage />} />
           </Routes>
         </main>
         <Footer />
