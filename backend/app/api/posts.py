@@ -100,7 +100,13 @@ def create_post():
         )
         db.session.add(post)
         db.session.commit()
-        
+
+        # 帖子创建成功后，更新对应板块的帖子数量
+        forum = Forum.query.get(forum_id)
+        if forum:
+            forum.post_count = (forum.post_count or 0) + 1
+            db.session.commit()
+
         return jsonify({
             'message': '发帖成功',
             'post': post.to_dict()
@@ -264,3 +270,35 @@ def delete_comment(comment_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({'message': f'删除评论失败: {str(e)}'}), 500
+
+@api.route('/posts/<int:post_id>', methods=['DELETE'])
+@jwt_required()
+def delete_post(post_id):
+    try:
+        current_user_id = get_jwt_identity()
+        post = Post.query.get_or_404(post_id)
+
+        # 检查用户是否有权限删除帖子 (例如：只有作者或管理员可以删除)
+        # 这里简单示例：只有作者可以删除
+        if post.user_id != current_user_id:
+            return jsonify({'message': '无权删除此帖子'}), 403
+
+        forum_id = post.forum_id
+
+        db.session.delete(post)
+        db.session.commit()
+
+        # 帖子删除成功后，更新对应板块的帖子数量
+        forum = Forum.query.get(forum_id)
+        if forum:
+            forum.post_count = (forum.post_count or 0) - 1
+            # 确保帖子数量不会小于0
+            if forum.post_count < 0:
+                forum.post_count = 0
+            db.session.commit()
+
+        return jsonify({'message': '帖子删除成功'}), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': f'帖子删除失败: {str(e)}'}), 500

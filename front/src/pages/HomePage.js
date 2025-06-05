@@ -215,7 +215,7 @@ const HomePage = () => {
                           </Card.Title>
                           <div className="mt-2">
                             <small className="text-muted">
-                              {forum.post_count} 篇帖子
+                              {forum.total_post_count} 篇帖子
                             </small>
                           </div>
                         </div>

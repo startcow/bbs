@@ -1,7 +1,45 @@
 # bbs
+## 如何运行项目
+
+1.  **克隆项目:**
+    ```bash
+    git clone <仓库地址>
+    cd bbs
+    ```
+
+2.  **后端设置:**
+    - 进入 `backend` 目录: `cd backend`
+    - 创建并激活 conda 虚拟环境: `conda create -n bbs python=3.10` (根据您的 Python 版本选择)
+    - 激活环境: `conda activate bbs`
+    - 安装依赖: `pip install -r requirements.txt`
+    - 设置 MySQL 数据库，创建名为 `bbs_dev` 的数据库，并设置字符集为 `utf8mb4`。
+    - 在 MySQL 命令行中执行初始化脚本:
+      ```sql
+      source F:/Vs_Code/bbs/backend/database/init.sql
+      source F:/Vs_Code/bbs/backend/database/init_data.sql
+      ```
+    - 运行测试数据初始化脚本:
+      ```bash
+      python database/create_test_data.py
+      ```
+    - 运行后端服务器: `python run.py`
+
+3.  **前端设置:**
+    - 进入 `front` 目录: `cd ../front`
+    - 安装依赖: `npm install` 或 `yarn install`
+    - 运行前端开发服务器: `npm start` 或 `yarn start`
+
+## 测试账号
+
+- 管理员: 用户名 `admin`, 密码 `123456`
+- 版主: 用户名 `moderator`, 密码 `123456`
+- 普通用户: 用户名 `user1`, 密码 `123456`
+
+
+
 
 ## 项目修改记录
-*2025.6.5.00点48分*
+## [2025.6.5.00点48分]
 ### 后端修改 (backend/)
 
 - **用户模型增强 (`backend/app/models/user.py`):**
@@ -45,39 +83,25 @@
   - 在 `package.json` 中添加了 `proxy` 配置，将所有 `/api` 开头的请求代理到后端服务器地址 (`http://127.0.0.1:8080`)。
   - 解决了前端无法正确访问后端 API 的问题。
 
-## 如何运行项目
+## 更新日志
+## [2025.6.5.13点11分]
 
-1.  **克隆项目:**
-    ```bash
-    git clone <仓库地址>
-    cd bbs
-    ```
+**新增功能:**
 
-2.  **后端设置:**
-    - 进入 `backend` 目录: `cd backend`
-    - 创建并激活 conda 虚拟环境: `conda create -n bbs python=3.10` (根据您的 Python 版本选择)
-    - 激活环境: `conda activate bbs`
-    - 安装依赖: `pip install -r requirements.txt`
-    - 设置 MySQL 数据库，创建名为 `bbs_dev` 的数据库，并设置字符集为 `utf8mb4`。
-    - 在 MySQL 命令行中执行初始化脚本:
-      ```sql
-      source F:/Vs_Code/bbs/backend/database/init.sql
-      source F:/Vs_Code/bbs/backend/database/init_data.sql
-      ```
-    - 运行测试数据初始化脚本:
-      ```bash
-      python database/create_test_data.py
-      ```
-    - 运行后端服务器: `python run.py`
+-   在首页热门板块展示各板块的帖子数量，并支持按帖子数量进行热度排序。
 
-3.  **前端设置:**
-    - 进入 `front` 目录: `cd ../front`
-    - 安装依赖: `npm install` 或 `yarn install`
-    - 运行前端开发服务器: `npm start` 或 `yarn start`
+**修复 Bug:**
 
+-   修复了后端在帖子创建和删除时未更新板块帖子数量的 bug。
+-   解决了首页热门板块因数据库冗余数据导致同名板块重复显示和数量统计不准确的问题，优化后端 API 实现按名称分组和汇总。
+-   修复了后端 API 分组查询在特定 SQL 模式下的错误 (`only_full_group_by`)。
+-   修正了板块详情页头部总帖子数量显示错误的 bug。
+-   修复了板块详情页分页控件“下一页”按钮未正确禁用的 bug。
+-   解决了板块详情页帖子列表显示不完整的问题，根本原因系数据库数据关联错误，已通过手动执行 SQL 更新修复。
 
-## 测试账号
+**主要代码变更:**
 
-- 管理员: 用户名 `admin`, 密码 `123456`
-- 版主: 用户名 `moderator`, 密码 `123456`
-- 普通用户: 用户名 `user1`, 密码 `123456`
+-   `backend/app/api/posts.py`: 改进帖子创建/删除逻辑以更新板块计数，增加删除帖子 API。
+-   `backend/app/api/forums.py`: 重构 `/api/forums` 查询以实现分组、汇总、去重及排序。
+-   `front/src/pages/HomePage.js`: 调整前端字段名以匹配后端数据。
+-   `front/src/pages/ForumDetailPage.js`: 完善分页逻辑和总数显示。
