@@ -29,7 +29,7 @@ const HomePage = () => {
           setNotices(noticeResp.notices.slice(0, 5));
         }
         // 获取热门帖子 (按点赞数排序)
-        const postsResponse = await fetch('/api/posts?sort_by=popular&per_page=6'); // 限制数量以便在首页展示
+        const postsResponse = await fetch('/api/posts?sort_by=popular&per_page=3'); // 限制数量为3个
         if (!postsResponse.ok) {
           throw new Error(`HTTP error! status: ${postsResponse.status}`);
         }
@@ -162,80 +162,82 @@ const HomePage = () => {
           <Col lg={8}>
             {/* 热门帖子 */}
             <section className="mb-5">
-              <div className="d-flex justify-content-between align-items-center mb-4">
+              <div className="mb-4">
                 <h2 className="h3 mb-0">🔥 热门帖子</h2>
+              </div>
+
+              <div>
+                {hotPosts.map((post, index) => (
+                  <Card key={post.id} className="post-card mb-3 animate-fade-in" style={{ animationDelay: `${index * 0.1}s` }}>
+                    <Card.Body>
+                      <div className="d-flex justify-content-between align-items-center mb-2">
+                        <span className="badge bg-primary">{post.forum?.name || '未知板块'}</span>
+                        <small className="text-muted">{new Date(post.created_at).toLocaleDateString()}</small>
+                      </div>
+                      <h5 className="card-title">
+                        <Link to={`/post/${post.id}`} className="text-decoration-none">
+                          {post.title}
+                        </Link>
+                      </h5>
+                      <p className="card-text text-muted">
+                        {post.content && post.content.length > 100 ? post.content.substring(0, 100) + '...' : (post.content || '暂无内容')}
+                      </p>
+                      <div className="d-flex gap-3">
+                        <small className="text-muted">
+                          <i className="far fa-thumbs-up me-1"></i>{post.like_count || 0}
+                        </small>
+                        <small className="text-muted">
+                          <i className="far fa-comment me-1"></i>{post.comment_count || 0}
+                        </small>
+                        <small className="text-muted">
+                          <i className="far fa-eye me-1"></i>{post.view_count || 0}
+                        </small>
+                      </div>
+                    </Card.Body>
+                  </Card>
+
+                ))}
+              </div>
+            </section>
+          <section className="mb-5">
+              <div className="d-flex justify-content-between align-items-center mb-4">
+                <h2 className="h3 mb-0">📢 最新动态</h2>
                 <Button as={Link} to="/posts" variant="outline-primary" size="sm">
                   查看更多
                 </Button>
               </div>
-              <Row>
-                {hotPosts.map(post => (
-                  <Col key={post.id} md={6} className="mb-3">
-                    <Card className="h-100 shadow-sm border-0" style={{ transition: 'all 0.3s ease' }}>
-                      <Card.Body>
-                        <div className="d-flex justify-content-between align-items-start mb-2">
-                          <Badge bg="secondary">{getForumName(post)}</Badge>
-                          <small className="text-muted">{new Date(post.created_at).toLocaleString()}</small>
-                        </div>
-                        <Card.Title as="h5">
-                          <Link to={`/post/${post.id}`} className="text-decoration-none text-dark">
-                            {post.title}
-                          </Link>
-                        </Card.Title>
-                        <div className="d-flex justify-content-between align-items-center">
-                          <div className="d-flex align-items-center">
-                            <small className="text-muted">作者: {post.author.username}</small>
-                          </div>
-                          <div className="d-flex gap-3">
-                            <small className="text-muted">
-                              👍 {post.like_count}
-                            </small>
-                            <small className="text-muted">
-                              💬 {post.comment_count}
-                            </small>
-                          </div>
-                        </div>
-                      </Card.Body>
-                    </Card>
-                  </Col>
-                ))}
-              </Row>
-            </section>
+              <div>
+                {latestPosts.map((post, index) => (
+                  <Card key={post.id} className="post-card mb-3 animate-fade-in" style={{ animationDelay: `${index * 0.1}s` }}>
+                    <Card.Body>
+                      <div className="d-flex justify-content-between align-items-center mb-2">
+                        <span className="badge bg-primary">{post.forum?.name || '未知板块'}</span>
+                        <small className="text-muted">{new Date(post.created_at).toLocaleDateString()}</small>
+                      </div>
+                      <h5 className="card-title">
+                        <Link to={`/post/${post.id}`} className="text-decoration-none">
+                          {post.title}
+                        </Link>
+                      </h5>
+                      <p className="card-text text-muted">
+                        {post.content && post.content.length > 100 ? post.content.substring(0, 100) + '...' : (post.content || '暂无内容')}
+                      </p>
+                      <div className="d-flex gap-3">
+                        <small className="text-muted">
+                          <i className="far fa-thumbs-up me-1"></i>{post.like_count || 0}
+                        </small>
+                        <small className="text-muted">
+                          <i className="far fa-comment me-1"></i>{post.comment_count || 0}
+                        </small>
+                        <small className="text-muted">
+                          <i className="far fa-eye me-1"></i>{post.view_count || 0}
+                        </small>
+                      </div>
+                    </Card.Body>
+                  </Card>
 
-            <section className="mb-5">
-              <h2 className="h3 mb-4">📢 最新动态</h2>
-              <Row>
-                {latestPosts.map(post => (
-                  <Col key={post.id} md={12} className="mb-3">
-                    <Card className="h-100 shadow-sm border-0" style={{ transition: 'all 0.3s ease' }}>
-                      <Card.Body>
-                        <div className="d-flex justify-content-between align-items-start mb-2">
-                          <Badge bg="secondary">{getForumName(post)}</Badge>
-                          <small className="text-muted">{new Date(post.created_at).toLocaleString()}</small>
-                        </div>
-                        <Card.Title as="h5">
-                          <Link to={`/post/${post.id}`} className="text-decoration-none text-dark">
-                            {post.title}
-                          </Link>
-                        </Card.Title>
-                        <div className="d-flex justify-content-between align-items-center">
-                          <div className="d-flex align-items-center">
-                            <small className="text-muted">作者: {post.author.username}</small>
-                          </div>
-                          <div className="d-flex gap-3">
-                            <small className="text-muted">
-                              👍 {post.like_count}
-                            </small>
-                            <small className="text-muted">
-                              💬 {post.comment_count}
-                            </small>
-                          </div>
-                        </div>
-                      </Card.Body>
-                    </Card>
-                  </Col>
                 ))}
-              </Row>
+              </div>
             </section>
           </Col>
 

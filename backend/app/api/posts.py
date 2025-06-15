@@ -1,6 +1,6 @@
-from flask import jsonify, request
+from flask import request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from app.models.post import Post, post_likes, post_favorites
+from app.models.post import Post, post_likes, post_favorites, likes
 from app.models.forum import Forum
 from app.models.comment import Comment
 from app import db
@@ -59,7 +59,7 @@ def get_post_by_id(post_id):
             is_favorited = favorite_record is not None
     except Exception as e:
         print('获取点赞状态失败:', str(e))    
-    response_data = post.to_dict()
+    response_data = post.to_dict(current_user_id)
     response_data['isLiked'] = is_liked
     response_data['isFavorited'] = is_favorited
     return jsonify(response_data)
@@ -144,11 +144,21 @@ def get_post_comments(post_id):
     per_page = request.args.get('per_page', 20, type=int)
     
     post = Post.query.get_or_404(post_id)
-    pagination = post.comments.order_by(Comment.created_at.desc())\
+    
+    # 获取当前用户ID（如果已登录）
+    current_user_id = None
+    try:
+        from flask_jwt_extended import get_jwt_identity
+        current_user_id = get_jwt_identity()
+    except:
+        pass
+    
+    # 只获取顶级评论（parent_id为None）
+    pagination = post.comments.filter_by(parent_id=None).order_by(Comment.created_at.desc())\
         .paginate(page=page, per_page=per_page, error_out=False)
     
     return jsonify({
-        'comments': [comment.to_dict() for comment in pagination.items],
+        'comments': [comment.to_dict(current_user_id) for comment in pagination.items],
         'total': pagination.total,
         'pages': pagination.pages,
         'current_page': pagination.page
@@ -177,7 +187,7 @@ def create_comment(post_id):
         
         return jsonify({
             'message': '评论成功',
-            'comment': comment.to_dict()
+            'comment': comment.to_dict(user_id)
         }), 201
         
     except Exception as e:
@@ -248,6 +258,84 @@ def share_post(post_id):
     db.session.commit()
     return jsonify({'message': '分享成功', 'share_count': post.share_count})
 
+@api.route('/comments/<int:comment_id>/like', methods=['POST'])
+@jwt_required()
+def like_comment(comment_id):
+    try:
+        user_id = get_jwt_identity()
+        comment = Comment.query.get_or_404(comment_id)
+        
+        # 检查是否已经点赞
+        existing_like = db.session.query(likes).filter_by(
+            user_id=user_id,
+            target_type='comment',
+            target_id=comment_id
+        ).first()
+        
+        is_liked = False
+        if existing_like:
+            # 取消点赞
+            db.session.execute(
+                likes.delete().where(
+                    likes.c.user_id == user_id,
+                    likes.c.target_type == 'comment',
+                    likes.c.target_id == comment_id
+                )
+            )
+            comment.like_count = comment.like_count - 1 if comment.like_count > 0 else 0
+        else:
+            # 添加点赞
+            db.session.execute(
+                likes.insert().values(
+                    user_id=user_id,
+                    target_type='comment',
+                    target_id=comment_id
+                )
+            )
+            comment.like_count = (comment.like_count or 0) + 1
+            is_liked = True
+            
+        db.session.commit()
+        return jsonify({
+            'message': '操作成功',
+            'is_liked': is_liked,
+            'like_count': comment.like_count
+        })
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': f'操作失败: {str(e)}'}), 500
+
+@api.route('/comments/<int:comment_id>/reply', methods=['POST'])
+@jwt_required()
+def reply_comment(comment_id):
+    try:
+        data = request.get_json()
+        if not data or 'content' not in data:
+            return jsonify({'message': '回复内容不能为空'}), 400
+
+        user_id = get_jwt_identity()
+        parent_comment = Comment.query.get_or_404(comment_id)
+        
+        reply = Comment(
+            content=data['content'],
+            user_id=user_id,
+            post_id=parent_comment.post_id,
+            parent_id=comment_id
+        )
+        
+        db.session.add(reply)
+        parent_comment.post.comment_count += 1
+        db.session.commit()
+        
+        return jsonify({
+            'message': '回复成功',
+            'reply': reply.to_dict(user_id)
+        }), 201
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': f'回复失败: {str(e)}'}), 500
+
 @api.route('/comments/<int:comment_id>', methods=['DELETE'])
 @jwt_required()
 def delete_comment(comment_id):
@@ -258,11 +346,29 @@ def delete_comment(comment_id):
         # 检查是否是评论作者或版主
         if comment.user_id != int(current_user_id) and not comment.post.forum.is_moderator(current_user_id):
             return jsonify({'message': '没有权限删除此评论'}), 403
-            
-        post = comment.post
-        post.comment_count -= 1
         
-        db.session.delete(comment)
+        # 递归删除所有回复
+        def delete_comment_and_replies(comment_to_delete):
+            # 先删除所有回复
+            for reply in comment_to_delete.replies:
+                delete_comment_and_replies(reply)
+            
+            # 删除评论的点赞记录
+            db.session.execute(
+                likes.delete().where(
+                    likes.c.target_type == 'comment',
+                    likes.c.target_id == comment_to_delete.id
+                )
+            )
+            
+            # 删除评论本身
+            db.session.delete(comment_to_delete)
+            return 1  # 返回删除的评论数量
+        
+        post = comment.post
+        deleted_count = delete_comment_and_replies(comment)
+        post.comment_count = max(0, post.comment_count - deleted_count)
+        
         db.session.commit()
         
         return jsonify({'message': '评论删除成功'}), 200
@@ -323,3 +429,102 @@ def get_latest_posts():
         })
     except Exception as e:
         return jsonify({'message': f'获取最新帖子失败: {str(e)}'}), 500
+
+@api.route('/users/<int:user_id>/posts', methods=['GET'])
+@jwt_required()
+def get_user_posts(user_id):
+    try:
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 10, type=int)
+        
+        # 获取当前用户ID
+        current_user_id = get_jwt_identity()
+        
+        # 检查权限：只能查看自己的帖子或管理员可以查看所有用户的帖子
+        if int(current_user_id) != user_id:
+            # 这里可以添加管理员权限检查
+            # 暂时只允许用户查看自己的帖子
+            return jsonify({'message': '无权限查看其他用户的帖子'}), 403
+        
+        posts = Post.query.filter_by(user_id=user_id).order_by(Post.created_at.desc()).paginate(
+            page=page, 
+            per_page=per_page, 
+            error_out=False
+        )
+        
+        return jsonify({
+            'posts': [post.to_dict(current_user_id) for post in posts.items],
+            'total': posts.total,
+            'pages': posts.pages,
+            'current_page': posts.page
+        })
+    except Exception as e:
+        return jsonify({'message': f'获取用户帖子失败: {str(e)}'}), 500
+
+@api.route('/users/<int:user_id>/favorites', methods=['GET'])
+@jwt_required()
+def get_user_favorites(user_id):
+    try:
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 10, type=int)
+        
+        # 获取当前用户ID
+        current_user_id = get_jwt_identity()
+        
+        # 检查权限：只能查看自己的收藏或管理员可以查看所有用户的收藏
+        if int(current_user_id) != user_id:
+            return jsonify({'message': '无权限查看其他用户的收藏'}), 403
+        
+        # 通过post_favorites表查询用户收藏的帖子
+        favorites_query = db.session.query(Post).join(
+            post_favorites, Post.id == post_favorites.c.post_id
+        ).filter(
+            post_favorites.c.user_id == user_id
+        ).order_by(post_favorites.c.created_at.desc())
+        
+        pagination = favorites_query.paginate(
+            page=page, 
+            per_page=per_page, 
+            error_out=False
+        )
+        
+        return jsonify({
+            'posts': [post.to_dict(current_user_id) for post in pagination.items],
+            'total': pagination.total,
+            'pages': pagination.pages,
+            'current_page': pagination.page
+        })
+    except Exception as e:
+        return jsonify({'message': f'获取用户收藏失败: {str(e)}'}), 500
+
+@api.route('/users/<int:user_id>/comments', methods=['GET'])
+@jwt_required()
+def get_user_comments(user_id):
+    try:
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 10, type=int)
+        
+        # 获取当前用户ID
+        current_user_id = get_jwt_identity()
+        
+        # 检查权限：只能查看自己的评论或管理员可以查看所有用户的评论
+        if int(current_user_id) != user_id:
+            return jsonify({'message': '无权限查看其他用户的评论'}), 403
+        
+        # 查询用户的评论，按创建时间降序排列
+        comments_query = Comment.query.filter_by(user_id=user_id).order_by(Comment.created_at.desc())
+        
+        pagination = comments_query.paginate(
+            page=page, 
+            per_page=per_page, 
+            error_out=False
+        )
+        
+        return jsonify({
+            'comments': [comment.to_dict(current_user_id) for comment in pagination.items],
+            'total': pagination.total,
+            'pages': pagination.pages,
+            'current_page': pagination.page
+        })
+    except Exception as e:
+        return jsonify({'message': f'获取用户评论失败: {str(e)}'}), 500

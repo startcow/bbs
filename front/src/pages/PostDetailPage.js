@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { setUser } from '../store/slices/authSlice';
+import { getProfile } from '../api/auth';
 import { canManagePost, canManageComment } from '../utils/permissions';
 import { 
   getPost, 
@@ -12,12 +14,14 @@ import {
   setEssencePost,
   createComment,
   deleteComment,
-  replyComment
+  replyComment,
+  likeComment
 } from '../api/posts';
 
 const PostDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const { user } = useSelector(state => state.auth);
   const [post, setPost] = useState(null);
   const [comments, setComments] = useState([]);
@@ -25,7 +29,9 @@ const PostDetailPage = () => {
   const [replyTo, setReplyTo] = useState(null);
   const [replyContent, setReplyContent] = useState('');
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);  useEffect(() => {  const fetchPost = async () => {
+  const [error, setError] = useState(null);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followersCount, setFollowersCount] = useState(0);  useEffect(() => {  const fetchPost = async () => {
       try {
         setLoading(true);
         const response = await getPost(id);
@@ -36,6 +42,13 @@ const PostDetailPage = () => {
           like_count: response.like_count || 0
         };
         setPost(postData);
+        
+        // 初始化关注状态
+        if (postData.author) {
+          setIsFollowing(postData.author.is_following || false);
+          setFollowersCount(postData.author.followers_count || 0);
+        }
+        
         const commentsResponse = await getPostComments(id);
         
         const comments = (commentsResponse && commentsResponse.comments) ? commentsResponse.comments : [];
@@ -79,6 +92,46 @@ const PostDetailPage = () => {
       }));
     } catch (err) {
       console.error('收藏失败:', err);
+    }
+  };
+
+  const handleFollow = async () => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    
+    if (!post?.author?.id) {
+      console.error('作者信息不完整');
+      return;
+    }
+    
+    try {
+      const response = await fetch(`/api/users/${post.author.id}/follow`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setIsFollowing(data.is_following);
+        setFollowersCount(data.followers_count);
+        
+        // 更新Redux store中的用户信息
+        try {
+          const updatedUser = await getProfile();
+          dispatch(setUser(updatedUser));
+        } catch (error) {
+          console.error('更新用户信息失败:', error);
+        }
+      } else {
+        console.error('关注操作失败');
+      }
+    } catch (err) {
+      console.error('关注失败:', err);
     }
   };
 
@@ -129,9 +182,10 @@ const PostDetailPage = () => {
       const response = await replyComment(commentId, replyContent);
       setComments(prev => prev.map(comment => 
         comment.id === commentId 
-          ? { ...comment, replies: [...comment.replies, response.data] }
+          ? { ...comment, replies: [...comment.replies, response.reply] }
           : comment
-      ));      setReplyContent('');
+      ));
+      setReplyContent('');
       setReplyTo(null);
       alert('回复成功！');
     } catch (err) {
@@ -150,13 +204,63 @@ const PostDetailPage = () => {
   const handleDeleteComment = async (commentId) => {
     if (!window.confirm('确定要删除这条评论吗？')) return;
     try {      
-      await delete(`/api/comments/${commentId}`);
+      await deleteComment(commentId);
       setComments(prev => prev.filter(c => c.id !== commentId));
       alert('评论删除成功！');
     } catch (error) {
       console.error('删除失败:', error);
     }
   };
+
+  const handleCommentLike = async (commentId) => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    try {
+      const response = await likeComment(commentId);
+      setComments(prev => prev.map(comment => {
+        if (comment.id === commentId) {
+          return {
+            ...comment,
+            isLiked: response.is_liked,
+            likes: response.like_count
+          };
+        }
+        // 也要更新回复中的点赞状态
+        return {
+          ...comment,
+          replies: comment.replies.map(reply => 
+            reply.id === commentId 
+              ? { ...reply, isLiked: response.is_liked, likes: response.like_count }
+              : reply
+          )
+        };
+      }));
+    } catch (err) {
+      console.error('点赞失败:', err);
+    }
+  };
+
+  const handleReplyLike = async (replyId) => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    try {
+      const response = await likeComment(replyId);
+      setComments(prev => prev.map(comment => ({
+        ...comment,
+        replies: comment.replies.map(reply => 
+          reply.id === replyId 
+            ? { ...reply, isLiked: response.is_liked, likes: response.like_count }
+            : reply
+        )
+      })));
+    } catch (err) {
+       console.error('点赞失败:', err);
+     }
+   };
 
   if (loading) return <div className="text-center py-5">加载中...</div>;
   if (error) return <div className="alert alert-danger m-4">{error}</div>;
@@ -170,10 +274,10 @@ const PostDetailPage = () => {
             <div className="card-header">
               <div className="d-flex justify-content-between align-items-center">
                 <div>
-                  <Link to={`/forum/${post.forum.id}`} className={`badge bg-${post.forum.color} text-decoration-none me-2`}>
+                  <Link to={`/forum/${post.forum.id}`} className="badge bg-primary text-decoration-none me-2">
                     {post.forum.name}
                   </Link>
-                  <span className="text-muted small">发布于 {post.createdAt}</span>
+                  <span className="text-muted small">发布于 {post.created_at}</span>
                 </div>
                 {canManagePost(user, post, post.forum.id) && (
                   <div className="dropdown">
@@ -269,8 +373,12 @@ const PostDetailPage = () => {
                             <small className="text-muted ms-2">{comment.createdAt}</small>
                           </div>
                           <div>
-                            <button className="btn btn-sm btn-outline-primary me-1">
-                              <i className="far fa-thumbs-up me-1"></i>{comment.likes}
+                            <button 
+                              className={`btn btn-sm ${comment.isLiked ? 'btn-primary' : 'btn-outline-primary'} me-1`}
+                              onClick={() => handleCommentLike(comment.id)}
+                              disabled={!user}
+                            >
+                              <i className={`${comment.isLiked ? 'fas' : 'far'} fa-thumbs-up me-1`}></i>{comment.likes}
                             </button>                            <button 
                               className="btn btn-sm btn-outline-secondary me-1"
                               onClick={() => setReplyTo(comment.id)}
@@ -327,8 +435,12 @@ const PostDetailPage = () => {
                                       <span className="fw-bold small">{reply.author.username}</span>
                                       <small className="text-muted ms-2">{reply.createdAt}</small>
                                     </div>
-                                    <button className="btn btn-sm btn-outline-primary">
-                                      <i className="far fa-thumbs-up me-1"></i>{reply.likes}
+                                    <button 
+                                      className={`btn btn-sm ${reply.isLiked ? 'btn-primary' : 'btn-outline-primary'}`}
+                                      onClick={() => handleReplyLike(reply.id)}
+                                      disabled={!user}
+                                    >
+                                      <i className={`${reply.isLiked ? 'fas' : 'far'} fa-thumbs-up me-1`}></i>{reply.likes}
                                     </button>
                                   </div>
                                   <p className="small mb-0">{reply.content}</p>
@@ -358,8 +470,13 @@ const PostDetailPage = () => {
               <h6>{post.author.username}</h6>
               <p className="text-muted small">{post.author.level}</p>
               <div className="d-grid gap-2">
-                <button className="btn btn-primary btn-sm">
-                  <i className="fas fa-plus me-1"></i>关注
+                <button 
+                  className={`btn btn-sm ${isFollowing ? 'btn-outline-primary' : 'btn-primary'}`}
+                  onClick={handleFollow}
+                  disabled={!user || user.id === post?.author?.id}
+                >
+                  <i className={`fas ${isFollowing ? 'fa-check' : 'fa-plus'} me-1`}></i>
+                  {isFollowing ? '已关注' : '关注'}
                 </button>
                 <button className="btn btn-outline-secondary btn-sm">
                   <i className="fas fa-envelope me-1"></i>私信

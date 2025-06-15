@@ -18,14 +18,36 @@ class Comment(db.Model):
     # 删除 post relationship，因为已经在 Post 模型中定义了
     replies = db.relationship('Comment', backref=db.backref('parent', remote_side=[id]))
 
-    def to_dict(self):
-        return {
+    def to_dict(self, current_user_id=None):
+        from app.models.post import likes
+        
+        data = {
             'id': self.id,
             'content': self.content,
             'user_id': self.user_id,
             'post_id': self.post_id,
+            'parent_id': self.parent_id,
             'author': self.user.to_dict(),
-            'replies': [reply.to_dict() for reply in self.replies],
+            'replies': [reply.to_dict(current_user_id) for reply in self.replies],
             'likes': self.like_count,
-            'createdAt': self.created_at.strftime('%Y-%m-%d %H:%M:%S')
+            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+            'createdAt': self.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+            'post': {
+                'id': self.post.id,
+                'title': self.post.title
+            } if self.post else None
         }
+        
+        if current_user_id:
+            # 检查当前用户是否点赞了这条评论
+            from app import db
+            like_record = db.session.query(likes).filter_by(
+                user_id=current_user_id,
+                target_type='comment',
+                target_id=self.id
+            ).first()
+            data['isLiked'] = like_record is not None
+        else:
+            data['isLiked'] = False
+            
+        return data
