@@ -163,7 +163,7 @@ const HomePage = () => {
                         </Card.Title>
                         <div className="d-flex justify-content-between align-items-center">
                           <div className="d-flex align-items-center">
-                            <small className="text-muted">作者ID: {post.user_id}</small>
+                            <small className="text-muted">作者: {post.author.username}</small>
                           </div>
                           <div className="d-flex gap-3">
                             <small className="text-muted">
