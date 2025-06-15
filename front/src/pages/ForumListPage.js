@@ -1,26 +1,32 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { getForums } from '../api/forums';
+import { getForums, getForumStats } from '../api/forums';
 
 const ForumListPage = () => {
   const [forums, setForums] = useState([]);
+  const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchForums = async () => {
+    const fetchData = async () => {
       try {
-        const data = await getForums();
-        console.log('获取到的板块数据:', data);
-        setForums(data.forums);
+        const [forumsData, statsData] = await Promise.all([
+          getForums(),
+          getForumStats()
+        ]);
+        console.log('获取到的板块数据:', forumsData);
+        console.log('获取到的统计数据:', statsData);
+        setForums(forumsData.forums);
+        setStats(statsData);
         setLoading(false);
       } catch (err) {
-        setError('获取板块列表失败');
+        setError('获取数据失败');
         setLoading(false);
       }
     };
 
-    fetchForums();
+    fetchData();
   }, []);
 
   if (loading) {
@@ -61,7 +67,7 @@ const ForumListPage = () => {
                   </div>
                   <div>
                     <h5 className="card-title mb-1">{forum.name}</h5>
-                    <small className="text-muted">今日新帖: {forum.todayPosts || 0}</small>
+                    <small className="text-muted">今日新帖: {forum.today_posts_count || 0}</small>
                   </div>
                 </div>
                 
@@ -70,11 +76,11 @@ const ForumListPage = () => {
                 <div className="forum-stats mb-3">
                   <div className="row text-center">
                     <div className="col-6">
-                      <div className="stat-number text-primary fw-bold">{forum.post_count || 0}</div>
+                      <div className="stat-number text-primary fw-bold">{forum.total_post_count || 0}</div>
                       <div className="stat-label small text-muted">总帖数</div>
                     </div>
                     <div className="col-6">
-                      <div className="stat-number text-success fw-bold">{forum.todayPosts || 0}</div>
+                      <div className="stat-number text-success fw-bold">{forum.today_posts_count || 0}</div>
                       <div className="stat-label small text-muted">今日新帖</div>
                     </div>
                   </div>
@@ -109,31 +115,25 @@ const ForumListPage = () => {
               <div className="row text-center">
                 <div className="col-md-3 mb-3">
                   <div className="stat-box">
-                    <div className="stat-number h3 text-primary">{forums.length}</div>
+                    <div className="stat-number h3 text-primary">{stats?.total_forums || 0}</div>
                     <div className="stat-label text-muted">总板块数</div>
                   </div>
                 </div>
                 <div className="col-md-3 mb-3">
                   <div className="stat-box">
-                    <div className="stat-number h3 text-success">
-                      {forums.reduce((sum, forum) => sum + (forum.post_count || 0), 0)}
-                    </div>
+                    <div className="stat-number h3 text-success">{stats?.total_posts || 0}</div>
                     <div className="stat-label text-muted">总帖子数</div>
                   </div>
                 </div>
                 <div className="col-md-3 mb-3">
                   <div className="stat-box">
-                    <div className="stat-number h3 text-warning">
-                      {forums.reduce((sum, forum) => sum + (forum.todayPosts || 0), 0)}
-                    </div>
+                    <div className="stat-number h3 text-warning">{stats?.today_posts || 0}</div>
                     <div className="stat-label text-muted">今日新帖</div>
                   </div>
                 </div>
                 <div className="col-md-3 mb-3">
                   <div className="stat-box">
-                    <div className="stat-number h3 text-info">
-                      {forums.filter(forum => forum.moderator).length}
-                    </div>
+                    <div className="stat-number h3 text-info">{stats?.total_moderators || 0}</div>
                     <div className="stat-label text-muted">版主总数</div>
                   </div>
                 </div>

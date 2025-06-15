@@ -222,10 +222,10 @@ const PostDetailPage = () => {
             <div className="card-header">
               <div className="d-flex justify-content-between align-items-center">
                 <div>
-                  <Link to={`/forum/${post.forum.id}`} className={`badge bg-${post.forum.color} text-decoration-none me-2`}>
+                  <Link to={`/forum/${post.forum.id}`} className="badge bg-primary text-decoration-none me-2">
                     {post.forum.name}
                   </Link>
-                  <span className="text-muted small">发布于 {post.createdAt}</span>
+                  <span className="text-muted small">发布于 {post.created_at}</span>
                 </div>
                 {canManagePost(user, post, post.forum.id) && (
                   <div className="dropdown">
