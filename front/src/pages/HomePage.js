@@ -4,18 +4,21 @@ import { Container, Row, Col, Card, Badge, Button, ListGroup, NavDropdown } from
 import { useSelector, useDispatch } from 'react-redux';
 import '../styles/HomePage.css';
 import { getLatestPosts } from '../api/posts';
-import { getNotices  } from '../api/spider';
-const HomePage = () => {  const { user } = useSelector(state => state.auth);
-const [notices, setNotices] = useState([]);
-const [latestPosts, setLatestPosts] = useState([]);
+import { getNotices } from '../api/spider';
+import RecentActivity from '../components/RecentActivity';
+const HomePage = () => {
+  const { user } = useSelector(state => state.auth);
+  const [notices, setNotices] = useState([]);
+  const [latestPosts, setLatestPosts] = useState([]);
 
-// 添加状态来存储热门帖子和热门板块数据
-const [hotPosts, setHotPosts] = useState([]);
-const [popularForums, setPopularForums] = useState([]);  
+  // 添加状态来存储热门帖子和热门板块数据
+  const [hotPosts, setHotPosts] = useState([]);
+  const [popularForums, setPopularForums] = useState([]);
   const [loading, setLoading] = useState(true);
-const [error, setError] = useState(null);
+  const [error, setError] = useState(null);
 
-  useEffect(() => {    const fetchData = async () => {
+  useEffect(() => {
+    const fetchData = async () => {
       try {
         setLoading(true);
         const noticeResp = await getNotices();
@@ -182,7 +185,7 @@ const [error, setError] = useState(null);
               </Row>
             </section>
 
-          <section className="mb-5">
+            <section className="mb-5">
               <h2 className="h3 mb-4">📢 最新动态</h2>
               <Row>
                 {latestPosts.map(post => (
@@ -252,16 +255,16 @@ const [error, setError] = useState(null);
             </section>
 
             <section className="mb-4">
-              <h3 className="h4 mb-3">📋 公告栏</h3>              
+              <h3 className="h4 mb-3">📋 公告栏</h3>
               <Card className="border-0 shadow-sm">
                 <Card.Body className="p-0">
                   <ListGroup variant="flush">
                     {notices && notices.map((post, index) => (
                       <ListGroup.Item key={index} className="border-0 px-3 py-2">
-                        <a 
+                        <a
                           href={post.url}
                           target="_blank"
-                          rel="noopener noreferrer" 
+                          rel="noopener noreferrer"
                           className="text-decoration-none text-dark"
                         >
                           <div className="small text-truncate">{post.title}</div>
@@ -280,9 +283,7 @@ const [error, setError] = useState(null);
               <h3 className="h4 mb-3">🎉 近期活动</h3>
               <Card className="border-0 shadow-sm">
                 <Card.Body>
-                  <div className="upcoming-events">
-                    <p className="text-center py-3">加载活动...</p>
-                  </div>
+                  <RecentActivity />
                 </Card.Body>
               </Card>
             </section>
