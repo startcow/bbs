@@ -1,10 +1,26 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { Container, Row, Col, Card, Form, Button, Alert } from 'react-bootstrap';
 import { setUser, setToken } from '../store/slices/authSlice';
 import storage from '../utils/storage';
 import { login } from '../api/auth';
+
+// 工具函数：记住的用户信息存储
+function getRememberedUsers() {
+  return JSON.parse(localStorage.getItem('rememberedUsers') || '[]');
+}
+function saveRememberedUser(username, password) {
+  let users = getRememberedUsers();
+  users = users.filter(u => u.username !== username);
+  users.unshift({ username, password });
+  localStorage.setItem('rememberedUsers', JSON.stringify(users));
+}
+function removeRememberedUser(username) {
+  let users = getRememberedUsers();
+  users = users.filter(u => u.username !== username);
+  localStorage.setItem('rememberedUsers', JSON.stringify(users));
+}
 
 const LoginPage = () => {
   const dispatch = useDispatch();
@@ -14,7 +30,33 @@ const LoginPage = () => {
     rememberMe: false
   });
   const [errors, setErrors] = useState({});
+  const [rememberedUsers, setRememberedUsers] = useState([]);
   const navigate = useNavigate();
+
+  // 页面加载时自动读取本地存储
+  useEffect(() => {
+    const users = getRememberedUsers();
+    setRememberedUsers(users);
+    if (users.length > 0) {
+      setFormData(prev => ({
+        ...prev,
+        username: users[0].username,
+        password: users[0].password,
+        rememberMe: true
+      }));
+    }
+  }, []);
+
+  // 用户名选择时自动填充密码
+  const handleUsernameChange = (e) => {
+    const username = e.target.value;
+    const user = rememberedUsers.find(u => u.username === username);
+    setFormData(prev => ({
+      ...prev,
+      username,
+      password: user ? user.password : '',
+    }));
+  };
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -26,43 +68,37 @@ const LoginPage = () => {
 
   const validateForm = () => {
     const newErrors = {};
-    
     if (!formData.username.trim()) {
       newErrors.username = '请输入学号或邮箱';
     }
-    
     if (!formData.password) {
       newErrors.password = '请输入密码';
     } else if (formData.password.length < 6) {
       newErrors.password = '密码至少6位';
     }
-    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();    
+    e.preventDefault();
     if (validateForm()) {
       try {
         const response = await login({
           username: formData.username,
           password: formData.password
         });
-        // console.log('登录成功:', response);
         storage.setItem('token', response.access_token);
         storage.setItem('user', response.user);
         dispatch(setToken(response.access_token));
         dispatch(setUser(response.user));
         
+
         if (formData.rememberMe) {
-          storage.setItem('rememberMe', true);
-          storage.setItem('savedUsername', formData.username);
+          saveRememberedUser(formData.username, formData.password);
         } else {
-          storage.removeItem('rememberMe');
-          storage.removeItem('savedUsername');
+          removeRememberedUser(formData.username);
         }
-        
         navigate('/');
       } catch (error) {
         setErrors({
@@ -85,7 +121,7 @@ const LoginPage = () => {
                   </Alert>
                 )}
                 <div className="text-center mb-4">
-                  <div 
+                  <div
                     style={{
                       width: '80px',
                       height: '80px',
@@ -103,18 +139,24 @@ const LoginPage = () => {
                   <p className="text-muted">欢迎回来！请登录您的账户</p>
                 </div>
 
-                <Form onSubmit={handleSubmit}>
+                <Form onSubmit={handleSubmit} autoComplete="on">
                   <Form.Group className="mb-3">
                     <Form.Label>学号/邮箱</Form.Label>
                     <Form.Control
-                      type="text"
+                      list="user-list"
                       name="username"
                       value={formData.username}
-                      onChange={handleChange}
+                      onChange={handleUsernameChange}
                       placeholder="请输入学号或邮箱"
+                      autoComplete="username"
                       isInvalid={!!errors.username}
                       style={{ borderRadius: '10px', padding: '12px' }}
                     />
+                    <datalist id="user-list">
+                      {rememberedUsers.map(u => (
+                        <option key={u.username} value={u.username} />
+                      ))}
+                    </datalist>
                     <Form.Control.Feedback type="invalid">
                       {errors.username}
                     </Form.Control.Feedback>
@@ -128,6 +170,7 @@ const LoginPage = () => {
                       value={formData.password}
                       onChange={handleChange}
                       placeholder="请输入密码"
+                      autoComplete="current-password"
                       isInvalid={!!errors.password}
                       style={{ borderRadius: '10px', padding: '12px' }}
                     />
