@@ -6,6 +6,7 @@ import '../styles/HomePage.css';
 import { getLatestPosts } from '../api/posts';
 import { getNotices } from '../api/spider';
 import RecentActivity from '../components/RecentActivity';
+
 const HomePage = () => {
   const { user } = useSelector(state => state.auth);
   const [notices, setNotices] = useState([]);
@@ -16,6 +17,8 @@ const HomePage = () => {
   const [popularForums, setPopularForums] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const [allForums, setAllForums] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -49,6 +52,13 @@ const HomePage = () => {
         const latestPostsData = await latestPostsResponse.json();
         setLatestPosts(latestPostsData.posts);
 
+        // 获取所有板块
+        const allForumsResponse = await fetch('/api/forums');
+        if (allForumsResponse.ok) {
+          const allForumsData = await allForumsResponse.json();
+          setAllForums(allForumsData.forums);
+        }
+
       } catch (error) {
         console.error("获取首页数据失败:", error);
         setError("加载数据失败，请稍后再试。");
@@ -74,6 +84,13 @@ const HomePage = () => {
 
     fetchLatestPosts();
   }, []);
+
+  // 辅助函数：通过forum_id查找板块名字，优先用post.forum.name
+  const getForumName = (post) => {
+    if (post.forum && post.forum.name) return post.forum.name;
+    const forum = allForums.find(f => String(f.id) === String(post.forum_id));
+    return forum ? forum.name : `ID:${post.forum_id}`;
+  };
 
   if (loading) {
     return <Container className="my-5 text-center"><p>加载中...</p></Container>;
@@ -157,7 +174,7 @@ const HomePage = () => {
                     <Card className="h-100 shadow-sm border-0" style={{ transition: 'all 0.3s ease' }}>
                       <Card.Body>
                         <div className="d-flex justify-content-between align-items-start mb-2">
-                          <Badge bg="secondary">版块ID: {post.forum_id}</Badge>
+                          <Badge bg="secondary">{getForumName(post)}</Badge>
                           <small className="text-muted">{new Date(post.created_at).toLocaleString()}</small>
                         </div>
                         <Card.Title as="h5">
@@ -193,7 +210,7 @@ const HomePage = () => {
                     <Card className="h-100 shadow-sm border-0" style={{ transition: 'all 0.3s ease' }}>
                       <Card.Body>
                         <div className="d-flex justify-content-between align-items-start mb-2">
-                          <Badge bg="secondary">版块ID: {post.forum_id}</Badge>
+                          <Badge bg="secondary">{getForumName(post)}</Badge>
                           <small className="text-muted">{new Date(post.created_at).toLocaleString()}</small>
                         </div>
                         <Card.Title as="h5">
