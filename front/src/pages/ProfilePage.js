@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Nav, Tab, Spinner, Alert } from 'react-bootstrap';
 import { useSelector } from 'react-redux';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
-import { getUserPosts, getUserFavorites } from '../api/posts';
+import { getUserPosts, getUserFavorites, getUserComments } from '../api/posts';
 import '../styles/ProfilePage.css';
 
 const ProfilePage = () => {
@@ -10,6 +10,7 @@ const ProfilePage = () => {
   const [searchParams] = useSearchParams();
   const [myPosts, setMyPosts] = useState([]);
   const [myFavorites, setMyFavorites] = useState([]);
+  const [myComments, setMyComments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('posts');
@@ -78,6 +79,30 @@ const ProfilePage = () => {
     }
   };
   
+  // 获取用户评论
+  const fetchUserComments = async (page = 1) => {
+    if (!user?.id) {
+      console.log('用户未登录或用户ID不存在');
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      setError(null);
+      console.log('正在调用 getUserComments API, 用户ID:', user.id);
+      const response = await getUserComments(user.id, { page, per_page: 10 });
+      console.log('评论API响应:', response);
+      setMyComments(response.comments || []);
+      setTotalPages(response.pages || 1);
+    } catch (err) {
+      setError('获取评论失败');
+      console.error('获取用户评论失败:', err);
+      console.error('错误详情:', err.response);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
   // 当activeTab变化时获取对应数据
   useEffect(() => {
     console.log('useEffect 被触发, activeTab:', activeTab);
@@ -87,6 +112,9 @@ const ProfilePage = () => {
     } else if (activeTab === 'favorites') {
       console.log('activeTab 是 favorites，准备调用 fetchUserFavorites');
       fetchUserFavorites();
+    } else if (activeTab === 'comments') {
+      console.log('activeTab 是 comments，准备调用 fetchUserComments');
+      fetchUserComments();
     }
   }, [user?.id, activeTab, page]);
   
@@ -337,7 +365,43 @@ const ProfilePage = () => {
                       ))}
                     </Tab.Pane>
                     <Tab.Pane eventKey="comments">
-                      <p className="text-muted text-center py-5">暂无评论记录</p>
+                      {loading && (
+                        <div className="text-center py-4">
+                          <Spinner animation="border" role="status">
+                            <span className="visually-hidden">加载中...</span>
+                          </Spinner>
+                        </div>
+                      )}
+                      
+                      {error && (
+                        <Alert variant="danger" className="text-center">
+                          {error}
+                        </Alert>
+                      )}
+                      
+                      {!loading && !error && myComments.length === 0 && (
+                        <p className="text-muted text-center py-5">暂无评论记录</p>
+                      )}
+                      
+                      {!loading && !error && myComments.length > 0 && myComments.map((comment, index) => (
+                        <Card key={comment.id} className="post-card mb-3 animate-fade-in" style={{ animationDelay: `${index * 0.1}s` }}>
+                          <Card.Body>
+                            <div className="d-flex justify-content-between align-items-center mb-2">
+                              <span className="badge bg-success">评论</span>
+                              <small className="text-muted">{new Date(comment.created_at).toLocaleString()}</small>
+                            </div>
+                            <div className="mb-2">
+                              <small className="text-muted">评论于帖子：</small>
+                              <Link to={`/post/${comment.post_id}`} className="text-decoration-none ms-1">
+                                {comment.post?.title || '未知帖子'}
+                              </Link>
+                            </div>
+                            <p className="card-text">
+                              {comment.content}
+                            </p>
+                          </Card.Body>
+                        </Card>
+                      ))}
                     </Tab.Pane>
                   </Tab.Content>
                 </Card.Body>

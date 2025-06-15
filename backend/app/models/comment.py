@@ -30,7 +30,12 @@ class Comment(db.Model):
             'author': self.user.to_dict(),
             'replies': [reply.to_dict(current_user_id) for reply in self.replies],
             'likes': self.like_count,
-            'createdAt': self.created_at.strftime('%Y-%m-%d %H:%M:%S')
+            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+            'createdAt': self.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+            'post': {
+                'id': self.post.id,
+                'title': self.post.title
+            } if self.post else None
         }
         
         if current_user_id:

@@ -496,3 +496,35 @@ def get_user_favorites(user_id):
         })
     except Exception as e:
         return jsonify({'message': f'获取用户收藏失败: {str(e)}'}), 500
+
+@api.route('/users/<int:user_id>/comments', methods=['GET'])
+@jwt_required()
+def get_user_comments(user_id):
+    try:
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 10, type=int)
+        
+        # 获取当前用户ID
+        current_user_id = get_jwt_identity()
+        
+        # 检查权限：只能查看自己的评论或管理员可以查看所有用户的评论
+        if int(current_user_id) != user_id:
+            return jsonify({'message': '无权限查看其他用户的评论'}), 403
+        
+        # 查询用户的评论，按创建时间降序排列
+        comments_query = Comment.query.filter_by(user_id=user_id).order_by(Comment.created_at.desc())
+        
+        pagination = comments_query.paginate(
+            page=page, 
+            per_page=per_page, 
+            error_out=False
+        )
+        
+        return jsonify({
+            'comments': [comment.to_dict(current_user_id) for comment in pagination.items],
+            'total': pagination.total,
+            'pages': pagination.pages,
+            'current_page': pagination.page
+        })
+    except Exception as e:
+        return jsonify({'message': f'获取用户评论失败: {str(e)}'}), 500

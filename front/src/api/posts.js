@@ -72,6 +72,11 @@ export const getUserPosts = (userId, params) => {
 };
 
 // 获取用户收藏的帖子
-export const getUserFavorites = (userId, params) => {
+export const getUserFavorites = (userId, params = {}) => {
   return api.get(`/users/${userId}/favorites`, { params });
+};
+
+// 获取用户评论
+export const getUserComments = (userId, params = {}) => {
+  return api.get(`/users/${userId}/comments`, { params });
 };
