@@ -1,0 +1,236 @@
+.chat-window {
+    position: fixed;
+    width: 800px;
+    height: 500px;
+    background: #fafafa;
+    border-radius: 16px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
+    overflow: hidden;
+    z-index: 9999;
+    user-select: none;
+}
+
+.chat-header {
+    height: 44px;
+    background: #fff;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    cursor: move;
+    font-size: 16px;
+    font-weight: 500;
+    position: relative;
+}
+
+.chat-logo {
+    font-size: 22px;
+    margin-right: 8px;
+}
+
+.chat-title {
+    flex: 1;
+    color: #444;
+}
+
+.chat-header-btns {
+    display: flex;
+    gap: 8px;
+}
+
+.chat-header-btn {
+    width: 22px;
+    height: 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    cursor: pointer;
+    color: #888;
+    font-size: 16px;
+    transition: background 0.2s;
+}
+
+.chat-header-btn:hover {
+    background: #f0f0f0;
+}
+
+.chat-body {
+    display: flex;
+    height: calc(100% - 44px);
+}
+
+.chat-sidebar {
+    width: 270px;
+    background: #f5f5f5;
+    border-right: 1px solid #eee;
+    display: flex;
+    flex-direction: column;
+}
+
+.chat-profile {
+    display: flex;
+    align-items: center;
+    padding: 18px 16px 10px 16px;
+}
+
+.chat-avatar {
+    width: 54px;
+    height: 54px;
+    border-radius: 50%;
+    margin-right: 12px;
+    border: 2px solid #fff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.chat-username {
+    font-size: 17px;
+    font-weight: 600;
+    color: #333;
+    display: flex;
+    align-items: center;
+}
+
+.chat-verified {
+    color: #1aad19;
+    font-size: 15px;
+    margin-left: 4px;
+}
+
+.chat-search {
+    display: flex;
+    align-items: center;
+    padding: 0 16px 10px 16px;
+}
+
+.chat-search-input {
+    flex: 1;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 15px;
+    outline: none;
+    background: #fff;
+}
+
+.chat-search-btn {
+    margin-left: 8px;
+    background: #1aad19;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    width: 32px;
+    height: 32px;
+    font-size: 20px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.chat-search-btn:hover {
+    background: #179b16;
+}
+
+.chat-tabs {
+    display: flex;
+    border-bottom: 1px solid #e0e0e0;
+    margin: 0 0 0 0;
+}
+
+.chat-tab {
+    flex: 1;
+    text-align: center;
+    padding: 10px 0 8px 0;
+    font-size: 16px;
+    color: #888;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: color 0.2s, border 0.2s;
+}
+
+.chat-tab-active {
+    color: #1aad19;
+    border-bottom: 2px solid #1aad19;
+    font-weight: 600;
+}
+
+.chat-friends {
+    flex: 1;
+    overflow-y: auto;
+    background: #f5f5f5;
+    padding-bottom: 10px;
+}
+
+.chat-friend-item {
+    display: flex;
+    align-items: center;
+    padding: 10px 16px;
+    cursor: pointer;
+    transition: background 0.2s;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.chat-friend-item:hover {
+    background: #e6f2e6;
+}
+
+.chat-friend-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    margin-right: 10px;
+}
+
+.chat-friend-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.chat-friend-name {
+    font-size: 15px;
+    color: #222;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+}
+
+.chat-friend-msg {
+    font-size: 14px;
+    color: #888;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.chat-friend-date {
+    font-size: 13px;
+    color: #bbb;
+    margin-left: 8px;
+    white-space: nowrap;
+}
+
+.chat-content {
+    flex: 1;
+    background: #fafafa;
+}
+
+.chat-window-max {
+    left: 0 !important;
+    top: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    border-radius: 0 !important;
+    z-index: 10000;
+}
+
+.chat-min-bar {
+    height: 44px;
+    background: #fff;
+    border-top: 1px solid #eee;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    cursor: pointer;
+    font-size: 16px;
+    color: #666;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}

@@ -10,3 +10,30 @@
 .navbar-brand img {
   margin-right: 8px;
 }
+
+.chat-msg-btn {
+  background: linear-gradient(90deg, #4f8cff 0%, #6a5cff 100%);
+  border: none;
+  border-radius: 10px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(79, 140, 255, 0.08);
+  transition: background 0.2s, box-shadow 0.2s;
+  padding: 0;
+}
+
+.chat-msg-btn:hover,
+.chat-msg-btn:focus {
+  background: linear-gradient(90deg, #3a6fd8 0%, #4b3fd8 100%);
+  box-shadow: 0 4px 16px rgba(79, 140, 255, 0.16);
+}
+
+.chat-msg-btn svg {
+  display: block;
+  margin: auto;
+  width: 24px;
+  height: 24px;
+}
