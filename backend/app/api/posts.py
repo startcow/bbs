@@ -429,3 +429,70 @@ def get_latest_posts():
         })
     except Exception as e:
         return jsonify({'message': f'获取最新帖子失败: {str(e)}'}), 500
+
+@api.route('/users/<int:user_id>/posts', methods=['GET'])
+@jwt_required()
+def get_user_posts(user_id):
+    try:
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 10, type=int)
+        
+        # 获取当前用户ID
+        current_user_id = get_jwt_identity()
+        
+        # 检查权限：只能查看自己的帖子或管理员可以查看所有用户的帖子
+        if int(current_user_id) != user_id:
+            # 这里可以添加管理员权限检查
+            # 暂时只允许用户查看自己的帖子
+            return jsonify({'message': '无权限查看其他用户的帖子'}), 403
+        
+        posts = Post.query.filter_by(user_id=user_id).order_by(Post.created_at.desc()).paginate(
+            page=page, 
+            per_page=per_page, 
+            error_out=False
+        )
+        
+        return jsonify({
+            'posts': [post.to_dict(current_user_id) for post in posts.items],
+            'total': posts.total,
+            'pages': posts.pages,
+            'current_page': posts.page
+        })
+    except Exception as e:
+        return jsonify({'message': f'获取用户帖子失败: {str(e)}'}), 500
+
+@api.route('/users/<int:user_id>/favorites', methods=['GET'])
+@jwt_required()
+def get_user_favorites(user_id):
+    try:
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 10, type=int)
+        
+        # 获取当前用户ID
+        current_user_id = get_jwt_identity()
+        
+        # 检查权限：只能查看自己的收藏或管理员可以查看所有用户的收藏
+        if int(current_user_id) != user_id:
+            return jsonify({'message': '无权限查看其他用户的收藏'}), 403
+        
+        # 通过post_favorites表查询用户收藏的帖子
+        favorites_query = db.session.query(Post).join(
+            post_favorites, Post.id == post_favorites.c.post_id
+        ).filter(
+            post_favorites.c.user_id == user_id
+        ).order_by(post_favorites.c.created_at.desc())
+        
+        pagination = favorites_query.paginate(
+            page=page, 
+            per_page=per_page, 
+            error_out=False
+        )
+        
+        return jsonify({
+            'posts': [post.to_dict(current_user_id) for post in pagination.items],
+            'total': pagination.total,
+            'pages': pagination.pages,
+            'current_page': pagination.page
+        })
+    except Exception as e:
+        return jsonify({'message': f'获取用户收藏失败: {str(e)}'}), 500

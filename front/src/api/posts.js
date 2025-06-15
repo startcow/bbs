@@ -65,3 +65,13 @@ export const createPost = async (data) => {
 export const getLatestPosts = (params) => {
   return api.get('/posts/latest', { params });
 };
+
+// 获取用户帖子
+export const getUserPosts = (userId, params) => {
+  return api.get(`/users/${userId}/posts`, { params });
+};
+
+// 获取用户收藏的帖子
+export const getUserFavorites = (userId, params) => {
+  return api.get(`/users/${userId}/favorites`, { params });
+};
