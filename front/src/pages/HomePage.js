@@ -4,18 +4,24 @@ import { Container, Row, Col, Card, Badge, Button, ListGroup, NavDropdown } from
 import { useSelector, useDispatch } from 'react-redux';
 import '../styles/HomePage.css';
 import { getLatestPosts } from '../api/posts';
-import { getNotices  } from '../api/spider';
-const HomePage = () => {  const { user } = useSelector(state => state.auth);
-const [notices, setNotices] = useState([]);
-const [latestPosts, setLatestPosts] = useState([]);
+import { getNotices } from '../api/spider';
+import RecentActivity from '../components/RecentActivity';
 
-// 添加状态来存储热门帖子和热门板块数据
-const [hotPosts, setHotPosts] = useState([]);
-const [popularForums, setPopularForums] = useState([]);  
+const HomePage = () => {
+  const { user } = useSelector(state => state.auth);
+  const [notices, setNotices] = useState([]);
+  const [latestPosts, setLatestPosts] = useState([]);
+
+  // 添加状态来存储热门帖子和热门板块数据
+  const [hotPosts, setHotPosts] = useState([]);
+  const [popularForums, setPopularForums] = useState([]);
   const [loading, setLoading] = useState(true);
-const [error, setError] = useState(null);
+  const [error, setError] = useState(null);
 
-  useEffect(() => {    const fetchData = async () => {
+  const [allForums, setAllForums] = useState([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
       try {
         setLoading(true);
         const noticeResp = await getNotices();
@@ -46,6 +52,13 @@ const [error, setError] = useState(null);
         const latestPostsData = await latestPostsResponse.json();
         setLatestPosts(latestPostsData.posts);
 
+        // 获取所有板块
+        const allForumsResponse = await fetch('/api/forums');
+        if (allForumsResponse.ok) {
+          const allForumsData = await allForumsResponse.json();
+          setAllForums(allForumsData.forums);
+        }
+
       } catch (error) {
         console.error("获取首页数据失败:", error);
         setError("加载数据失败，请稍后再试。");
@@ -71,6 +84,13 @@ const [error, setError] = useState(null);
 
     fetchLatestPosts();
   }, []);
+
+  // 辅助函数：通过forum_id查找板块名字，优先用post.forum.name
+  const getForumName = (post) => {
+    if (post.forum && post.forum.name) return post.forum.name;
+    const forum = allForums.find(f => String(f.id) === String(post.forum_id));
+    return forum ? forum.name : `ID:${post.forum_id}`;
+  };
 
   if (loading) {
     return <Container className="my-5 text-center"><p>加载中...</p></Container>;
@@ -154,7 +174,7 @@ const [error, setError] = useState(null);
                     <Card className="h-100 shadow-sm border-0" style={{ transition: 'all 0.3s ease' }}>
                       <Card.Body>
                         <div className="d-flex justify-content-between align-items-start mb-2">
-                          <Badge bg="secondary">版块ID: {post.forum_id}</Badge>
+                          <Badge bg="secondary">{getForumName(post)}</Badge>
                           <small className="text-muted">{new Date(post.created_at).toLocaleString()}</small>
                         </div>
                         <Card.Title as="h5">
@@ -182,7 +202,7 @@ const [error, setError] = useState(null);
               </Row>
             </section>
 
-          <section className="mb-5">
+            <section className="mb-5">
               <h2 className="h3 mb-4">📢 最新动态</h2>
               <Row>
                 {latestPosts.map(post => (
@@ -190,7 +210,7 @@ const [error, setError] = useState(null);
                     <Card className="h-100 shadow-sm border-0" style={{ transition: 'all 0.3s ease' }}>
                       <Card.Body>
                         <div className="d-flex justify-content-between align-items-start mb-2">
-                          <Badge bg="secondary">版块ID: {post.forum_id}</Badge>
+                          <Badge bg="secondary">{getForumName(post)}</Badge>
                           <small className="text-muted">{new Date(post.created_at).toLocaleString()}</small>
                         </div>
                         <Card.Title as="h5">
@@ -252,16 +272,16 @@ const [error, setError] = useState(null);
             </section>
 
             <section className="mb-4">
-              <h3 className="h4 mb-3">📋 公告栏</h3>              
+              <h3 className="h4 mb-3">📋 公告栏</h3>
               <Card className="border-0 shadow-sm">
                 <Card.Body className="p-0">
                   <ListGroup variant="flush">
                     {notices && notices.map((post, index) => (
                       <ListGroup.Item key={index} className="border-0 px-3 py-2">
-                        <a 
+                        <a
                           href={post.url}
                           target="_blank"
-                          rel="noopener noreferrer" 
+                          rel="noopener noreferrer"
                           className="text-decoration-none text-dark"
                         >
                           <div className="small text-truncate">{post.title}</div>
@@ -280,9 +300,7 @@ const [error, setError] = useState(null);
               <h3 className="h4 mb-3">🎉 近期活动</h3>
               <Card className="border-0 shadow-sm">
                 <Card.Body>
-                  <div className="upcoming-events">
-                    <p className="text-center py-3">加载活动...</p>
-                  </div>
+                  <RecentActivity />
                 </Card.Body>
               </Card>
             </section>

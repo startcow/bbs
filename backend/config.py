@@ -9,11 +9,11 @@ class Config:
     
 class DevelopmentConfig(Config):
     DEBUG = True
-    SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://root:chen@localhost/bbs_dev'
+    SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://root:123456@localhost/bbs_dev'
     
 class TestingConfig(Config):
     TESTING = True
-    SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://root:chen@localhost/bbs_test'
+    SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://root:123456@localhost/bbs_test'
     
 class ProductionConfig(Config):
     SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL')
