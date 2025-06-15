@@ -55,3 +55,8 @@ export const createPost = async (data) => {
   const response = await api.post('/posts', data);
   return response.data;
 };
+
+// 获取最新帖子
+export const getLatestPosts = (params) => {
+  return api.get('/posts/latest', { params });
+};

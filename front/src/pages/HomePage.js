@@ -2,48 +2,26 @@ import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Container, Row, Col, Card, Badge, Button, ListGroup, NavDropdown } from 'react-bootstrap';
 import { useSelector, useDispatch } from 'react-redux';
-import { logout } from '../store/slices/authSlice';
 import '../styles/HomePage.css';
+import { getLatestPosts } from '../api/posts';
+import { getNotices  } from '../api/spider';
+const HomePage = () => {  const { user } = useSelector(state => state.auth);
+const [notices, setNotices] = useState([]);
+const [latestPosts, setLatestPosts] = useState([]);
 
-const hotPosts = [
-  { id: 1, title: "期末复习资料分享", author: "学霸一号", forum: "课程交流", comments: 42, likes: 156, time: "2小时前" },
-  { id: 2, title: "校园歌手大赛报名开始啦", author: "活动组织者", forum: "校园活动", comments: 28, likes: 95, time: "4小时前" },
-  { id: 3, title: "寻找一起参加数学建模比赛的队友", author: "数模爱好者", forum: "组队", comments: 15, likes: 37, time: "昨天" },
-  { id: 4, title: "食堂新菜品测评", author: "美食达人", forum: "日常生活", comments: 56, likes: 128, time: "昨天" },
-  { id: 5, title: "丢失学生卡，急寻", author: "粗心同学", forum: "失物招领", comments: 8, likes: 20, time: "2天前" },
-];
-
-const forums = [
-  { id: 1, name: "课程交流", icon: "fa-book", posts: 1245, color: "primary" },
-  { id: 2, name: "失物招领", icon: "fa-search", posts: 856, color: "success" },
-  { id: 3, name: "树洞", icon: "fa-comments", posts: 2367, color: "danger" },
-  { id: 4, name: "表白墙", icon: "fa-heart", posts: 1589, color: "warning" },
-  { id: 5, name: "组队", icon: "fa-users", posts: 743, color: "info" },
-  { id: 6, name: "校园活动", icon: "fa-calendar", posts: 932, color: "secondary" },
-];
-
-const announcements = [
-  { id: 1, title: "关于校园网络升级的通知", date: "2023-06-15" },
-  { id: 2, title: "期末考试安排已公布", date: "2023-06-10" },
-  { id: 3, title: "暑期社会实践活动报名", date: "2023-06-05" },
-];
-
-const HomePage = () => {
-  const { user } = useSelector(state => state.auth);
-  const dispatch = useDispatch();
-  const navigate = useNavigate();
-
-  // 添加状态来存储热门帖子和热门板块数据
-  const [hotPosts, setHotPosts] = useState([]);
-  const [popularForums, setPopularForums] = useState([]);
+// 添加状态来存储热门帖子和热门板块数据
+const [hotPosts, setHotPosts] = useState([]);
+const [popularForums, setPopularForums] = useState([]);  
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+const [error, setError] = useState(null);
 
-  // 使用 useEffect 在组件加载时获取数据
-  useEffect(() => {
-    const fetchData = async () => {
+  useEffect(() => {    const fetchData = async () => {
       try {
         setLoading(true);
+        const noticeResp = await getNotices();
+        if (noticeResp && noticeResp.notices) {
+          setNotices(noticeResp.notices.slice(0, 5));
+        }
         // 获取热门帖子 (按点赞数排序)
         const postsResponse = await fetch('/api/posts?sort_by=popular&per_page=6'); // 限制数量以便在首页展示
         if (!postsResponse.ok) {
@@ -60,6 +38,14 @@ const HomePage = () => {
         const forumsData = await forumsResponse.json();
         setPopularForums(forumsData.forums);
 
+        // 获取最新帖子
+        const latestPostsResponse = await fetch('/api/posts?sort_by=latest&per_page=5');
+        if (!latestPostsResponse.ok) {
+          throw new Error(`HTTP error! status: ${latestPostsResponse.status}`);
+        }
+        const latestPostsData = await latestPostsResponse.json();
+        setLatestPosts(latestPostsData.posts);
+
       } catch (error) {
         console.error("获取首页数据失败:", error);
         setError("加载数据失败，请稍后再试。");
@@ -69,7 +55,22 @@ const HomePage = () => {
     };
 
     fetchData();
-  }, []); // 空依赖数组表示只在组件挂载时运行一次
+  }, []);
+
+  useEffect(() => {
+    const fetchLatestPosts = async () => {
+      try {
+        const response = await getLatestPosts({ per_page: 10 });
+        if (response.data && response.data.posts) {
+          setLatestPosts(response.data.posts);
+        }
+      } catch (err) {
+        console.error('获取最新帖子失败:', err);
+      }
+    };
+
+    fetchLatestPosts();
+  }, []);
 
   if (loading) {
     return <Container className="my-5 text-center"><p>加载中...</p></Container>;
@@ -181,16 +182,40 @@ const HomePage = () => {
               </Row>
             </section>
 
-            {/* 最新动态 */}
-            <section className="mb-5">
+          <section className="mb-5">
               <h2 className="h3 mb-4">📢 最新动态</h2>
-              <Card className="border-0 shadow-sm">
-                <Card.Body>
-                  <div className="latest-posts">
-                    <p className="text-center py-3">加载最新动态...</p>
-                  </div>
-                </Card.Body>
-              </Card>
+              <Row>
+                {latestPosts.map(post => (
+                  <Col key={post.id} md={12} className="mb-3">
+                    <Card className="h-100 shadow-sm border-0" style={{ transition: 'all 0.3s ease' }}>
+                      <Card.Body>
+                        <div className="d-flex justify-content-between align-items-start mb-2">
+                          <Badge bg="secondary">版块ID: {post.forum_id}</Badge>
+                          <small className="text-muted">{new Date(post.created_at).toLocaleString()}</small>
+                        </div>
+                        <Card.Title as="h5">
+                          <Link to={`/post/${post.id}`} className="text-decoration-none text-dark">
+                            {post.title}
+                          </Link>
+                        </Card.Title>
+                        <div className="d-flex justify-content-between align-items-center">
+                          <div className="d-flex align-items-center">
+                            <small className="text-muted">作者: {post.author.username}</small>
+                          </div>
+                          <div className="d-flex gap-3">
+                            <small className="text-muted">
+                              👍 {post.like_count}
+                            </small>
+                            <small className="text-muted">
+                              💬 {post.comment_count}
+                            </small>
+                          </div>
+                        </div>
+                      </Card.Body>
+                    </Card>
+                  </Col>
+                ))}
+              </Row>
             </section>
           </Col>
 
@@ -226,18 +251,30 @@ const HomePage = () => {
               </div>
             </section>
 
-            {/* 公告栏 */}
             <section className="mb-4">
-              <h3 className="h4 mb-3">📋 公告栏</h3>
+              <h3 className="h4 mb-3">📋 公告栏</h3>              
               <Card className="border-0 shadow-sm">
-                <Card.Body>
+                <Card.Body className="p-0">
                   <ListGroup variant="flush">
-                    <ListGroup.Item className="border-0 px-0"><p className="text-center py-3">加载公告...</p></ListGroup.Item>
+                    {notices && notices.map((post, index) => (
+                      <ListGroup.Item key={index} className="border-0 px-3 py-2">
+                        <a 
+                          href={post.url}
+                          target="_blank"
+                          rel="noopener noreferrer" 
+                          className="text-decoration-none text-dark"
+                        >
+                          <div className="small text-truncate">{post.title}</div>
+                          <div className="smaller text-muted mt-1">
+                            {post.author?.username}
+                          </div>
+                        </a>
+                      </ListGroup.Item>
+                    ))}
                   </ListGroup>
                 </Card.Body>
               </Card>
             </section>
-
             {/* 近期活动 */}
             <section>
               <h3 className="h4 mb-3">🎉 近期活动</h3>

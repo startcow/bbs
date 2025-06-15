@@ -82,11 +82,14 @@
   margin-bottom: 0.5rem;
   background: #f8f9fa;
   transition: all 0.3s ease;
+  width: 100%;
+  display: block;
 }
 
 .list-group-item:hover {
-  background: #e9ecef;
+  background: #f8f9fa;
   transform: translateX(5px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .shadow-sm {
@@ -146,4 +149,38 @@
 .btn-outline-primary:hover {
   background-color: #667eea;
   border-color: #667eea;
+}
+
+.latest-posts .list-group-item {
+  padding: 1rem;
+  margin-bottom: 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  background: #ffffff;
+  transition: all 0.2s ease;
+}
+
+.latest-posts .list-group-item:last-child {
+  border-bottom: none;
+}
+
+.latest-posts .list-group-item:hover {
+  background: #f8f9fa;
+  transform: translateX(5px);
+}
+
+.latest-posts .post-title {
+  color: #2c3e50;
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+}
+
+.latest-posts .post-meta {
+  font-size: 0.875rem;
+  color: #6c757d;
+}
+
+.latest-posts .list-group {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
 }

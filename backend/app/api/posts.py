@@ -302,3 +302,24 @@ def delete_post(post_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({'message': f'帖子删除失败: {str(e)}'}), 500
+
+@api.route('/posts/latest', methods=['GET'])
+def get_latest_posts():
+    try:
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 10, type=int)
+        
+        posts = Post.query.order_by(Post.created_at.desc()).paginate(
+            page=page, 
+            per_page=per_page, 
+            error_out=False
+        )
+        
+        return jsonify({
+            'posts': [post.to_dict() for post in posts.items],
+            'total': posts.total,
+            'pages': posts.pages,
+            'current_page': posts.page
+        })
+    except Exception as e:
+        return jsonify({'message': f'获取最新帖子失败: {str(e)}'}), 500
