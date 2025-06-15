@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Navbar, Nav, Container, Form, Button, NavDropdown } from 'react-bootstrap';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../store/slices/authSlice';
+import storage from '../utils/storage';
 import '../styles/Header.css'; 
 
 const Header = () => {
@@ -19,7 +20,13 @@ const Header = () => {
   };
 
   const handleLogout = () => {
+    // 清理Redux状态
     dispatch(logout());
+    // 清理本地存储
+    storage.removeItem('token');
+    storage.removeItem('user');
+    storage.removeItem('rememberMe');
+    storage.removeItem('savedUsername');
     navigate('/');
   };
 

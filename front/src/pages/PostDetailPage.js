@@ -12,7 +12,8 @@ import {
   setEssencePost,
   createComment,
   deleteComment,
-  replyComment
+  replyComment,
+  likeComment
 } from '../api/posts';
 
 const PostDetailPage = () => {
@@ -129,9 +130,10 @@ const PostDetailPage = () => {
       const response = await replyComment(commentId, replyContent);
       setComments(prev => prev.map(comment => 
         comment.id === commentId 
-          ? { ...comment, replies: [...comment.replies, response.data] }
+          ? { ...comment, replies: [...comment.replies, response.reply] }
           : comment
-      ));      setReplyContent('');
+      ));
+      setReplyContent('');
       setReplyTo(null);
       alert('回复成功！');
     } catch (err) {
@@ -150,13 +152,63 @@ const PostDetailPage = () => {
   const handleDeleteComment = async (commentId) => {
     if (!window.confirm('确定要删除这条评论吗？')) return;
     try {      
-      await delete(`/api/comments/${commentId}`);
+      await deleteComment(commentId);
       setComments(prev => prev.filter(c => c.id !== commentId));
       alert('评论删除成功！');
     } catch (error) {
       console.error('删除失败:', error);
     }
   };
+
+  const handleCommentLike = async (commentId) => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    try {
+      const response = await likeComment(commentId);
+      setComments(prev => prev.map(comment => {
+        if (comment.id === commentId) {
+          return {
+            ...comment,
+            isLiked: response.is_liked,
+            likes: response.like_count
+          };
+        }
+        // 也要更新回复中的点赞状态
+        return {
+          ...comment,
+          replies: comment.replies.map(reply => 
+            reply.id === commentId 
+              ? { ...reply, isLiked: response.is_liked, likes: response.like_count }
+              : reply
+          )
+        };
+      }));
+    } catch (err) {
+      console.error('点赞失败:', err);
+    }
+  };
+
+  const handleReplyLike = async (replyId) => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    try {
+      const response = await likeComment(replyId);
+      setComments(prev => prev.map(comment => ({
+        ...comment,
+        replies: comment.replies.map(reply => 
+          reply.id === replyId 
+            ? { ...reply, isLiked: response.is_liked, likes: response.like_count }
+            : reply
+        )
+      })));
+    } catch (err) {
+       console.error('点赞失败:', err);
+     }
+   };
 
   if (loading) return <div className="text-center py-5">加载中...</div>;
   if (error) return <div className="alert alert-danger m-4">{error}</div>;
@@ -269,8 +321,12 @@ const PostDetailPage = () => {
                             <small className="text-muted ms-2">{comment.createdAt}</small>
                           </div>
                           <div>
-                            <button className="btn btn-sm btn-outline-primary me-1">
-                              <i className="far fa-thumbs-up me-1"></i>{comment.likes}
+                            <button 
+                              className={`btn btn-sm ${comment.isLiked ? 'btn-primary' : 'btn-outline-primary'} me-1`}
+                              onClick={() => handleCommentLike(comment.id)}
+                              disabled={!user}
+                            >
+                              <i className={`${comment.isLiked ? 'fas' : 'far'} fa-thumbs-up me-1`}></i>{comment.likes}
                             </button>                            <button 
                               className="btn btn-sm btn-outline-secondary me-1"
                               onClick={() => setReplyTo(comment.id)}
@@ -327,8 +383,12 @@ const PostDetailPage = () => {
                                       <span className="fw-bold small">{reply.author.username}</span>
                                       <small className="text-muted ms-2">{reply.createdAt}</small>
                                     </div>
-                                    <button className="btn btn-sm btn-outline-primary">
-                                      <i className="far fa-thumbs-up me-1"></i>{reply.likes}
+                                    <button 
+                                      className={`btn btn-sm ${reply.isLiked ? 'btn-primary' : 'btn-outline-primary'}`}
+                                      onClick={() => handleReplyLike(reply.id)}
+                                      disabled={!user}
+                                    >
+                                      <i className={`${reply.isLiked ? 'fas' : 'far'} fa-thumbs-up me-1`}></i>{reply.likes}
                                     </button>
                                   </div>
                                   <p className="small mb-0">{reply.content}</p>

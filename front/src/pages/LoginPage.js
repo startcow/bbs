@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { Container, Row, Col, Card, Form, Button, Alert } from 'react-bootstrap';
+import { setUser, setToken } from '../store/slices/authSlice';
 import storage from '../utils/storage';
 import { login } from '../api/auth';
 
@@ -51,7 +52,8 @@ const LoginPage = () => {
         // console.log('登录成功:', response);
         storage.setItem('token', response.access_token);
         storage.setItem('user', response.user);
-        dispatch({ type: 'auth/setUser', payload: response.user });
+        dispatch(setToken(response.access_token));
+        dispatch(setUser(response.user));
         
         if (formData.rememberMe) {
           storage.setItem('rememberMe', true);

@@ -16,6 +16,16 @@ post_favorites = db.Table('post_favorites',
     db.Column('created_at', db.DateTime, default=datetime.utcnow)
 )
 
+# 通用点赞表
+likes = db.Table('likes',
+    db.Column('id', db.Integer, primary_key=True),
+    db.Column('user_id', db.Integer, db.ForeignKey('users.id'), nullable=False),
+    db.Column('target_type', db.Enum('post', 'comment'), nullable=False),
+    db.Column('target_id', db.Integer, nullable=False),
+    db.Column('created_at', db.DateTime, default=datetime.utcnow),
+    db.UniqueConstraint('user_id', 'target_type', 'target_id', name='unique_like')
+)
+
 class Post(db.Model):
     __tablename__ = 'posts'
     

@@ -47,7 +47,12 @@ export const deleteComment = (commentId) => {
 
 // 回复评论
 export const replyComment = (commentId, content) => {
-  return api.post(`comments/${commentId}/replies`, { content });
+  return api.post(`/comments/${commentId}/reply`, { content });
+};
+
+// 点赞评论
+export const likeComment = (commentId) => {
+  return api.post(`/comments/${commentId}/like`);
 };
 
 // 创建帖子
