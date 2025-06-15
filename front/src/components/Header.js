@@ -98,7 +98,6 @@ const Header = () => {
                 id="user-dropdown"
               >
                 <NavDropdown.Item as={Link} to="/profile">个人中心</NavDropdown.Item>
-                <NavDropdown.Item as={Link} to="/profile?tab=posts">我的帖子</NavDropdown.Item>
                 <NavDropdown.Item as={Link} to="/settings">设置</NavDropdown.Item>
                 <NavDropdown.Divider />
                 <NavDropdown.Item onClick={handleLogout}>

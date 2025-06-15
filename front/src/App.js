@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { setUser, setToken } from './store/slices/authSlice';
 import storage from './utils/storage';
+import { getProfile } from './api/auth';
 import './App.css';
 
 // 导入组件
@@ -26,11 +27,21 @@ function App() {
   // 应用启动时恢复用户登录状态
   useEffect(() => {
     const token = storage.getItem('token');
-    const user = storage.getItem('user');
     
-    if (token && user) {
+    if (token) {
       dispatch(setToken(token));
-      dispatch(setUser(user));
+      // 从服务器获取最新的用户信息
+      getProfile()
+        .then(response => {
+          dispatch(setUser(response));
+          storage.setItem('user', response);
+        })
+        .catch(error => {
+          console.error('获取用户信息失败:', error);
+          // 如果获取失败，清除本地存储的token
+          storage.removeItem('token');
+          dispatch(setToken(null));
+        });
     }
   }, [dispatch]);
   return (

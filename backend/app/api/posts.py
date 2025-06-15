@@ -59,7 +59,7 @@ def get_post_by_id(post_id):
             is_favorited = favorite_record is not None
     except Exception as e:
         print('获取点赞状态失败:', str(e))    
-    response_data = post.to_dict()
+    response_data = post.to_dict(current_user_id)
     response_data['isLiked'] = is_liked
     response_data['isFavorited'] = is_favorited
     return jsonify(response_data)

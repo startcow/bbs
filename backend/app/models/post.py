@@ -56,7 +56,7 @@ class Post(db.Model):
             'id': self.id,
             'title': self.title,
             'content': self.content,
-            'author': self.author.to_dict(),
+            'author': self.author.to_dict(current_user_id),
             'forum': self.forum.to_dict(),
             'view_count': self.view_count,
             'like_count': self.like_count,

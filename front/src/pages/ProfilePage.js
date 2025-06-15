@@ -1,16 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Nav, Tab, Spinner, Alert } from 'react-bootstrap';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { getUserPosts, getUserFavorites, getUserComments } from '../api/posts';
+import { getProfile } from '../api/auth';
+import { getUserFollowing, getUserFollowers } from '../api/follows';
+import { setUser } from '../store/slices/authSlice';
 import '../styles/ProfilePage.css';
 
 const ProfilePage = () => {
+  const dispatch = useDispatch();
   const { user } = useSelector(state => state.auth);
   const [searchParams] = useSearchParams();
   const [myPosts, setMyPosts] = useState([]);
   const [myFavorites, setMyFavorites] = useState([]);
   const [myComments, setMyComments] = useState([]);
+  const [myFollowing, setMyFollowing] = useState([]);
+  const [myFollowers, setMyFollowers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('posts');
@@ -20,10 +26,26 @@ const ProfilePage = () => {
   // 根据URL参数设置活动标签页
   useEffect(() => {
     const tabParam = searchParams.get('tab');
-    if (tabParam && ['posts', 'favorites', 'comments'].includes(tabParam)) {
+    if (tabParam && ['posts', 'favorites', 'comments', 'following', 'followers'].includes(tabParam)) {
       setActiveTab(tabParam);
     }
   }, [searchParams]);
+  
+  // 获取最新的用户信息
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        const updatedUser = await getProfile();
+        dispatch(setUser(updatedUser));
+      } catch (error) {
+        console.error('获取用户信息失败:', error);
+      }
+    };
+    
+    if (user) {
+      fetchUserProfile();
+    }
+  }, [dispatch, user?.id]);
   
   // 获取用户帖子
   const fetchUserPosts = async () => {
@@ -102,6 +124,54 @@ const ProfilePage = () => {
       setLoading(false);
     }
   };
+
+  // 获取用户关注列表
+  const fetchUserFollowing = async () => {
+    if (!user?.id) {
+      console.log('用户未登录或用户ID不存在');
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      setError(null);
+      console.log('正在调用 getUserFollowing API, 用户ID:', user.id);
+      const response = await getUserFollowing(user.id, { page, per_page: 10 });
+      console.log('关注列表API响应:', response);
+      setMyFollowing(response.following || []);
+      setTotalPages(response.pages || 1);
+    } catch (err) {
+      setError('获取关注列表失败');
+      console.error('获取用户关注列表失败:', err);
+      console.error('错误详情:', err.response);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 获取用户粉丝列表
+  const fetchUserFollowers = async () => {
+    if (!user?.id) {
+      console.log('用户未登录或用户ID不存在');
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      setError(null);
+      console.log('正在调用 getUserFollowers API, 用户ID:', user.id);
+      const response = await getUserFollowers(user.id, { page, per_page: 10 });
+      console.log('粉丝列表API响应:', response);
+      setMyFollowers(response.followers || []);
+      setTotalPages(response.pages || 1);
+    } catch (err) {
+      setError('获取粉丝列表失败');
+      console.error('获取用户粉丝列表失败:', err);
+      console.error('错误详情:', err.response);
+    } finally {
+      setLoading(false);
+    }
+  };
   
   // 当activeTab变化时获取对应数据
   useEffect(() => {
@@ -115,6 +185,12 @@ const ProfilePage = () => {
     } else if (activeTab === 'comments') {
       console.log('activeTab 是 comments，准备调用 fetchUserComments');
       fetchUserComments();
+    } else if (activeTab === 'following') {
+      console.log('activeTab 是 following，准备调用 fetchUserFollowing');
+      fetchUserFollowing();
+    } else if (activeTab === 'followers') {
+      console.log('activeTab 是 followers，准备调用 fetchUserFollowers');
+      fetchUserFollowers();
     }
   }, [user?.id, activeTab, page]);
   
@@ -175,14 +251,14 @@ const ProfilePage = () => {
                     </div>
                   </Col>
                   <Col>
-                    <div className="stats-item">
-                      <div className="h3 mb-2">456</div>
+                    <div className="stats-item" style={{ cursor: 'pointer' }} onClick={() => setActiveTab('following')}>
+                      <div className="h3 mb-2 text-primary">{user?.following_count || 0}</div>
                       <div className="text-muted">关注</div>
                     </div>
                   </Col>
                   <Col>
-                    <div className="stats-item">
-                      <div className="h3 mb-2">789</div>
+                    <div className="stats-item" style={{ cursor: 'pointer' }} onClick={() => setActiveTab('followers')}>
+                      <div className="h3 mb-2 text-primary">{user?.followers_count || 0}</div>
                       <div className="text-muted">粉丝</div>
                     </div>
                   </Col>
@@ -261,6 +337,12 @@ const ProfilePage = () => {
                     </Nav.Item>
                     <Nav.Item>
                       <Nav.Link eventKey="comments">我的评论</Nav.Link>
+                    </Nav.Item>
+                    <Nav.Item>
+                      <Nav.Link eventKey="following">我的关注</Nav.Link>
+                    </Nav.Item>
+                    <Nav.Item>
+                      <Nav.Link eventKey="followers">我的粉丝</Nav.Link>
                     </Nav.Item>
                   </Nav>
                 </Card.Header>
@@ -399,6 +481,110 @@ const ProfilePage = () => {
                             <p className="card-text">
                               {comment.content}
                             </p>
+                          </Card.Body>
+                        </Card>
+                      ))}
+                    </Tab.Pane>
+                    <Tab.Pane eventKey="following">
+                      {loading && (
+                        <div className="text-center py-4">
+                          <Spinner animation="border" role="status">
+                            <span className="visually-hidden">加载中...</span>
+                          </Spinner>
+                        </div>
+                      )}
+                      
+                      {error && (
+                        <Alert variant="danger" className="text-center">
+                          {error}
+                        </Alert>
+                      )}
+                      
+                      {!loading && !error && myFollowing.length === 0 && (
+                        <p className="text-muted text-center py-5">暂无关注用户</p>
+                      )}
+                      
+                      {!loading && !error && myFollowing.length > 0 && myFollowing.map((followedUser, index) => (
+                        <Card key={followedUser.id} className="user-card mb-3 animate-fade-in" style={{ animationDelay: `${index * 0.1}s` }}>
+                          <Card.Body>
+                            <div className="d-flex align-items-center">
+                              <img
+                                src={followedUser.avatar || '/avatar-default.jpg'}
+                                alt="用户头像"
+                                className="rounded-circle me-3"
+                                style={{ width: '50px', height: '50px' }}
+                                onError={(e) => e.target.src = '/avatar-default.jpg'}
+                              />
+                              <div className="flex-grow-1">
+                                <h6 className="mb-1">
+                                  <Link to={`/user/${followedUser.id}`} className="text-decoration-none">
+                                    {followedUser.username}
+                                  </Link>
+                                </h6>
+                                <p className="text-muted mb-1 small">{followedUser.nickname || '暂无昵称'}</p>
+                                <div className="d-flex gap-3 small text-muted">
+                                  <span>关注 {followedUser.following_count || 0}</span>
+                                  <span>粉丝 {followedUser.followers_count || 0}</span>
+                                </div>
+                              </div>
+                              {followedUser.is_following !== undefined && (
+                                <span className={`badge ${followedUser.is_following ? 'bg-success' : 'bg-secondary'}`}>
+                                  {followedUser.is_following ? '已关注' : '未关注'}
+                                </span>
+                              )}
+                            </div>
+                          </Card.Body>
+                        </Card>
+                      ))}
+                    </Tab.Pane>
+                    <Tab.Pane eventKey="followers">
+                      {loading && (
+                        <div className="text-center py-4">
+                          <Spinner animation="border" role="status">
+                            <span className="visually-hidden">加载中...</span>
+                          </Spinner>
+                        </div>
+                      )}
+                      
+                      {error && (
+                        <Alert variant="danger" className="text-center">
+                          {error}
+                        </Alert>
+                      )}
+                      
+                      {!loading && !error && myFollowers.length === 0 && (
+                        <p className="text-muted text-center py-5">暂无粉丝</p>
+                      )}
+                      
+                      {!loading && !error && myFollowers.length > 0 && myFollowers.map((follower, index) => (
+                        <Card key={follower.id} className="user-card mb-3 animate-fade-in" style={{ animationDelay: `${index * 0.1}s` }}>
+                          <Card.Body>
+                            <div className="d-flex align-items-center">
+                              <img
+                                src={follower.avatar || '/avatar-default.jpg'}
+                                alt="用户头像"
+                                className="rounded-circle me-3"
+                                style={{ width: '50px', height: '50px' }}
+                                onError={(e) => e.target.src = '/avatar-default.jpg'}
+                              />
+                              <div className="flex-grow-1">
+                                <h6 className="mb-1">
+                                  <Link to={`/user/${follower.id}`} className="text-decoration-none">
+                                    {follower.username}
+                                  </Link>
+                                </h6>
+                                <p className="text-muted mb-1 small">{follower.nickname || '暂无昵称'}</p>
+                                <div className="d-flex gap-3 small text-muted">
+                                  <span>关注 {follower.following_count || 0}</span>
+                                  <span>粉丝 {follower.followers_count || 0}</span>
+                                </div>
+                              </div>
+                              {follower.is_following !== undefined && (
+                                <span className={`badge ${follower.is_following ? 'bg-success' : 'bg-secondary'}`}>
+                                  {follower.is_following ? '已关注' : '未关注'}
+                                </span>
+                              )}
+                            </div>
                           </Card.Body>
                         </Card>
                       ))}

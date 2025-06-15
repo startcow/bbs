@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { setUser } from '../store/slices/authSlice';
+import { getProfile } from '../api/auth';
 import { canManagePost, canManageComment } from '../utils/permissions';
 import { 
   getPost, 
@@ -19,6 +21,7 @@ import {
 const PostDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const { user } = useSelector(state => state.auth);
   const [post, setPost] = useState(null);
   const [comments, setComments] = useState([]);
@@ -26,7 +29,9 @@ const PostDetailPage = () => {
   const [replyTo, setReplyTo] = useState(null);
   const [replyContent, setReplyContent] = useState('');
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);  useEffect(() => {  const fetchPost = async () => {
+  const [error, setError] = useState(null);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followersCount, setFollowersCount] = useState(0);  useEffect(() => {  const fetchPost = async () => {
       try {
         setLoading(true);
         const response = await getPost(id);
@@ -37,6 +42,13 @@ const PostDetailPage = () => {
           like_count: response.like_count || 0
         };
         setPost(postData);
+        
+        // 初始化关注状态
+        if (postData.author) {
+          setIsFollowing(postData.author.is_following || false);
+          setFollowersCount(postData.author.followers_count || 0);
+        }
+        
         const commentsResponse = await getPostComments(id);
         
         const comments = (commentsResponse && commentsResponse.comments) ? commentsResponse.comments : [];
@@ -80,6 +92,46 @@ const PostDetailPage = () => {
       }));
     } catch (err) {
       console.error('收藏失败:', err);
+    }
+  };
+
+  const handleFollow = async () => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    
+    if (!post?.author?.id) {
+      console.error('作者信息不完整');
+      return;
+    }
+    
+    try {
+      const response = await fetch(`/api/users/${post.author.id}/follow`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setIsFollowing(data.is_following);
+        setFollowersCount(data.followers_count);
+        
+        // 更新Redux store中的用户信息
+        try {
+          const updatedUser = await getProfile();
+          dispatch(setUser(updatedUser));
+        } catch (error) {
+          console.error('更新用户信息失败:', error);
+        }
+      } else {
+        console.error('关注操作失败');
+      }
+    } catch (err) {
+      console.error('关注失败:', err);
     }
   };
 
@@ -418,8 +470,13 @@ const PostDetailPage = () => {
               <h6>{post.author.username}</h6>
               <p className="text-muted small">{post.author.level}</p>
               <div className="d-grid gap-2">
-                <button className="btn btn-primary btn-sm">
-                  <i className="fas fa-plus me-1"></i>关注
+                <button 
+                  className={`btn btn-sm ${isFollowing ? 'btn-outline-primary' : 'btn-primary'}`}
+                  onClick={handleFollow}
+                  disabled={!user || user.id === post?.author?.id}
+                >
+                  <i className={`fas ${isFollowing ? 'fa-check' : 'fa-plus'} me-1`}></i>
+                  {isFollowing ? '已关注' : '关注'}
                 </button>
                 <button className="btn btn-outline-secondary btn-sm">
                   <i className="fas fa-envelope me-1"></i>私信
