@@ -310,7 +310,7 @@ const ChatWindow = ({ onClose, onMaximize }) => {
                 <div className="chat-sidebar">
                     <div className="chat-profile">
                         <img className="chat-avatar" src="https://i.imgtg.com/2023/05/19/ZQw6v.jpg" alt="avatar" />
-                        <div className="chat-username"> 是我啊 <span className="chat-verified">✔</span></div>
+                        <div className="chat-username"> {currentUser?.nickname || currentUser?.username} <span className="chat-verified">✔</span></div>
                     </div>
                     <div className="chat-search">
                         <input
