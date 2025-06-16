@@ -7,10 +7,43 @@ const ChatWindow = ({ onClose, onMaximize }) => {
     const [rel, setRel] = useState({ x: 100, y: 100 });
     const [offset, setOffset] = useState({ x: 0, y: 0 });
     const [maximized, setMaximized] = useState(false);
+    const [selectedUser, setSelectedUser] = useState(null);
+    const [messages, setMessages] = useState({});
+    const [newMessage, setNewMessage] = useState('');
 
-    // 拖动事件
+    const mockMessages = {
+        'user1': [
+            { sender: 'user1', content: '你好，请问作业做完了吗？', timestamp: '24/6/13' },
+            { sender: 'me', content: '还没呢，正在做。', timestamp: '24/6/13' }
+        ],
+        'user2': [
+            { sender: 'user2', content: '今晚一起打球吗？🏀', timestamp: '24/6/12' },
+            { sender: 'me', content: '好啊，几点？', timestamp: '24/6/12' }
+        ]
+    };
+
+    const handleUserClick = (username) => {
+        setSelectedUser(username);
+        if (!messages[username]) {
+            setMessages(prev => ({ ...prev, [username]: mockMessages[username] || [] }));
+        }
+    };
+
+    const handleSendMessage = () => {
+        if (!newMessage.trim() || !selectedUser) return;
+        const newMsg = {
+            sender: 'me',
+            content: newMessage,
+            timestamp: new Date().toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit', year: '2-digit' })
+        };
+        setMessages(prev => ({
+            ...prev,
+            [selectedUser]: [...(prev[selectedUser] || []), newMsg]
+        }));
+        setNewMessage('');
+    };
+
     const onMouseDown = (e) => {
-        // 只允许在顶部栏（chat-header）拖动
         let node = e.target;
         let isHeader = false;
         while (node) {
@@ -54,17 +87,14 @@ const ChatWindow = ({ onClose, onMaximize }) => {
         };
     }, [dragging, maximized, offset.x, offset.y]);
 
-    // 放大/还原
     const handleMaximize = () => {
         setMaximized(v => !v);
         if (onMaximize) onMaximize();
     };
-    // 关闭
     const handleClose = () => {
         if (onClose) onClose();
     };
 
-    // 样式
     const windowStyle = maximized
         ? { left: 0, top: 0, width: '100vw', height: '100vh', borderRadius: 0 }
         : { left: rel.x, top: rel.y };
@@ -98,7 +128,7 @@ const ChatWindow = ({ onClose, onMaximize }) => {
                         <span className="chat-tab">群聊</span>
                     </div>
                     <div className="chat-friends">
-                        <div className="chat-friend-item">
+                        <div className="chat-friend-item" onClick={() => handleUserClick('user1')}>
                             <img className="chat-friend-avatar" src="https://i.imgtg.com/2023/05/19/ZQw6v.jpg" alt="f1" />
                             <div className="chat-friend-info">
                                 <div className="chat-friend-name">user1 <span className="chat-verified">✔</span></div>
@@ -106,7 +136,7 @@ const ChatWindow = ({ onClose, onMaximize }) => {
                             </div>
                             <div className="chat-friend-date">24/6/13</div>
                         </div>
-                        <div className="chat-friend-item">
+                        <div className="chat-friend-item" onClick={() => handleUserClick('user2')}>
                             <img className="chat-friend-avatar" src="https://i.imgtg.com/2023/05/19/ZQw6v.jpg" alt="f2" />
                             <div className="chat-friend-info">
                                 <div className="chat-friend-name">user2</div>
@@ -117,7 +147,32 @@ const ChatWindow = ({ onClose, onMaximize }) => {
                     </div>
                 </div>
                 <div className="chat-content">
-                    {/* 右侧聊天内容区，暂不实现 */}
+                    {selectedUser ? (
+                        <>
+                            <div className="chat-messages" style={{ height: 'calc(100% - 60px)', overflowY: 'auto', padding: '10px' }}>
+                                {messages[selectedUser]?.map((msg, index) => (
+                                    <div key={index} style={{ marginBottom: '10px', textAlign: msg.sender === 'me' ? 'right' : 'left' }}>
+                                        <div style={{ display: 'inline-block', padding: '8px 12px', borderRadius: '8px', background: msg.sender === 'me' ? '#1aad19' : '#f0f0f0', color: msg.sender === 'me' ? 'white' : 'black' }}>
+                                            {msg.content}
+                                        </div>
+                                        <div style={{ fontSize: '12px', color: '#888', marginTop: '4px' }}>{msg.timestamp}</div>
+                                    </div>
+                                ))}
+                            </div>
+                            <div style={{ display: 'flex', padding: '10px', borderTop: '1px solid #eee' }}>
+                                <input
+                                    type="text"
+                                    value={newMessage}
+                                    onChange={(e) => setNewMessage(e.target.value)}
+                                    placeholder="输入消息..."
+                                    style={{ flex: 1, padding: '8px', borderRadius: '4px', border: '1px solid #ddd', marginRight: '10px' }}
+                                />
+                                <button onClick={handleSendMessage} style={{ padding: '8px 16px', background: '#1aad19', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>发送</button>
+                            </div>
+                        </>
+                    ) : (
+                        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', color: '#888' }}>请选择一个用户开始聊天</div>
+                    )}
                 </div>
             </div>
         </div>
