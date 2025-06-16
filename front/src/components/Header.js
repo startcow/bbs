@@ -75,21 +75,21 @@ const Header = () => {
             </Form>
 
             <div className="d-flex align-items-center">
-              {/* 消息按钮 */}
-              <Button
-                className="chat-msg-btn me-2"
-                onClick={() => setShowChat(v => !v)}
-                title="消息"
-              >
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M4 6.5C4 5.12 5.12 4 6.5 4h11c1.38 0 2.5 1.12 2.5 2.5v7c0 1.38-1.12 2.5-2.5 2.5H7.92L5.2 19.13A.5.5 0 0 1 4.5 18.7V6.5Z" fill="#fff" />
-                </svg>
-              </Button >
-              {
-                user ? (
+              {user && (
+                <>
+                  {/* 消息按钮 */}
+                  <Button
+                    className="chat-msg-btn me-2"
+                    onClick={() => setShowChat(v => !v)}
+                    title="消息"
+                  >
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M4 6.5C4 5.12 5.12 4 6.5 4h11c1.38 0 2.5 1.12 2.5 2.5v7c0 1.38-1.12 2.5-2.5 2.5H7.92L5.2 19.13A.5.5 0 0 1 4.5 18.7V6.5Z" fill="#fff" />
+                    </svg>
+                  </Button>
                   <NavDropdown
                     title={
-                      < div className="d-flex align-items-center" >
+                      <div className="d-flex align-items-center">
                         <div
                           style={{
                             width: '32px',
@@ -106,9 +106,8 @@ const Header = () => {
                             {user.nickname?.[0] || user.username[0]}
                           </span>
                         </div>
-                        {user.nickname || user.username
-                        }
-                      </div >
+                        {user.nickname || user.username}
+                      </div>
                     }
                     id="user-dropdown"
                   >
@@ -119,22 +118,24 @@ const Header = () => {
                     <NavDropdown.Item onClick={handleLogout}>
                       退出登录
                     </NavDropdown.Item>
-                  </NavDropdown >
-                ) : (
-                  <>
-                    <Button as={Link} to="/login" variant="outline-primary" className="me-2">
-                      登录
-                    </Button>
-                    <Button as={Link} to="/register" variant="primary">
-                      注册
-                    </Button>
-                  </>
-                )}
-            </div >
-          </Navbar.Collapse >
-        </Container >
-      </Navbar >
-      {showChat && (
+                  </NavDropdown>
+                </>
+              )}
+              {!user && (
+                <>
+                  <Button as={Link} to="/login" variant="outline-primary" className="me-2">
+                    登录
+                  </Button>
+                  <Button as={Link} to="/register" variant="primary">
+                    注册
+                  </Button>
+                </>
+              )}
+            </div>
+          </Navbar.Collapse>
+        </Container>
+      </Navbar>
+      {user && showChat && (
         <ChatWindow
           onClose={() => setShowChat(false)}
           onMinimize={() => { }}
