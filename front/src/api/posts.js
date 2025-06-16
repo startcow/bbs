@@ -47,7 +47,12 @@ export const deleteComment = (commentId) => {
 
 // 回复评论
 export const replyComment = (commentId, content) => {
-  return api.post(`comments/${commentId}/replies`, { content });
+  return api.post(`/comments/${commentId}/reply`, { content });
+};
+
+// 点赞评论
+export const likeComment = (commentId) => {
+  return api.post(`/comments/${commentId}/like`);
 };
 
 // 创建帖子
@@ -59,4 +64,19 @@ export const createPost = async (data) => {
 // 获取最新帖子
 export const getLatestPosts = (params) => {
   return api.get('/posts/latest', { params });
+};
+
+// 获取用户帖子
+export const getUserPosts = (userId, params) => {
+  return api.get(`/users/${userId}/posts`, { params });
+};
+
+// 获取用户收藏的帖子
+export const getUserFavorites = (userId, params = {}) => {
+  return api.get(`/users/${userId}/favorites`, { params });
+};
+
+// 获取用户评论
+export const getUserComments = (userId, params = {}) => {
+  return api.get(`/users/${userId}/comments`, { params });
 };

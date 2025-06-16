@@ -5,6 +5,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../store/slices/authSlice';
 import '../styles/Header.css';
 import ChatWindow from './ChatWindow';
+import storage from '../utils/storage';
 
 const Header = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -16,12 +17,18 @@ const Header = () => {
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
+      navigate(`/search?keyword=${encodeURIComponent(searchQuery)}`);
     }
   };
 
   const handleLogout = () => {
+    // 清理Redux状态
     dispatch(logout());
+    // 清理本地存储
+    storage.removeItem('token');
+    storage.removeItem('user');
+    storage.removeItem('rememberMe');
+    storage.removeItem('savedUsername');
     navigate('/');
   };
 
@@ -77,54 +84,56 @@ const Header = () => {
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M4 6.5C4 5.12 5.12 4 6.5 4h11c1.38 0 2.5 1.12 2.5 2.5v7c0 1.38-1.12 2.5-2.5 2.5H7.92L5.2 19.13A.5.5 0 0 1 4.5 18.7V6.5Z" fill="#fff" />
                 </svg>
-              </Button>
-              {user ? (
-                <NavDropdown
-                  title={
-                    <div className="d-flex align-items-center">
-                      <div
-                        style={{
-                          width: '32px',
-                          height: '32px',
-                          backgroundColor: '#28a745',
-                          borderRadius: '50%',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          marginRight: '8px'
-                        }}
-                      >
-                        <span style={{ color: 'white', fontWeight: 'bold' }}>
-                          {user.nickname?.[0] || user.username[0]}
-                        </span>
-                      </div>
-                      {user.nickname || user.username}
-                    </div>
-                  }
-                  id="user-dropdown"
-                >
-                  <NavDropdown.Item as={Link} to="/profile">个人中心</NavDropdown.Item>
-                  <NavDropdown.Item as={Link} to="/my/posts">我的帖子</NavDropdown.Item>
-                  <NavDropdown.Item as={Link} to="/settings">设置</NavDropdown.Item>
-                  <NavDropdown.Divider />
-                  <NavDropdown.Item onClick={handleLogout}>
-                    退出登录
-                  </NavDropdown.Item>
-                </NavDropdown>
-              ) : (
-                <>
-                  <Button as={Link} to="/login" variant="outline-primary" className="me-2">
-                    登录
-                  </Button>
-                  <Button as={Link} to="/register" variant="primary">
-                    注册
-                  </Button>
-                </>
-              )}
-            </div>
-          </Navbar.Collapse>
-        </Container>
-      </Navbar>
+              </Button >
+              {
+                user ? (
+                  <NavDropdown
+                    title={
+                      < div className="d-flex align-items-center" >
+                        <div
+                          style={{
+                            width: '32px',
+                            height: '32px',
+                            backgroundColor: '#28a745',
+                            borderRadius: '50%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            marginRight: '8px'
+                          }}
+                        >
+                          <span style={{ color: 'white', fontWeight: 'bold' }}>
+                            {user.nickname?.[0] || user.username[0]}
+                          </span>
+                        </div>
+                        {user.nickname || user.username
+                        }
+                      </div >
+                    }
+                    id="user-dropdown"
+                  >
+                    <NavDropdown.Item as={Link} to="/profile">个人中心</NavDropdown.Item>
+                    <NavDropdown.Item as={Link} to="/my/posts">我的帖子</NavDropdown.Item>
+                    <NavDropdown.Item as={Link} to="/settings">设置</NavDropdown.Item>
+                    <NavDropdown.Divider />
+                    <NavDropdown.Item onClick={handleLogout}>
+                      退出登录
+                    </NavDropdown.Item>
+                  </NavDropdown >
+                ) : (
+                  <>
+                    <Button as={Link} to="/login" variant="outline-primary" className="me-2">
+                      登录
+                    </Button>
+                    <Button as={Link} to="/register" variant="primary">
+                      注册
+                    </Button>
+                  </>
+                )}
+            </div >
+          </Navbar.Collapse >
+        </Container >
+      </Navbar >
       {showChat && (
         <ChatWindow
           onClose={() => setShowChat(false)}

@@ -19,3 +19,7 @@ export const addModerator = (forumId, userId) => {
 export const removeModerator = (forumId, moderatorId) => {
   return api.delete(`/forums/${forumId}/moderators/${moderatorId}`);
 };
+
+export const getForumStats = () => {
+  return api.get('/forums/stats');
+};
