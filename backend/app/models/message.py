@@ -20,11 +20,28 @@ class Message(db.Model):
         return f'<Message {self.sender_id} -> {self.receiver_id}: {self.content[:20]}>'
 
     def to_dict(self):
+        from .user import User # 局部导入以避免循环依赖
+        
+        sender_user = User.query.get(self.sender_id)
+        receiver_user = User.query.get(self.receiver_id)
+
         return {
             'id': self.id,
             'sender_id': self.sender_id,
             'receiver_id': self.receiver_id,
             'content': self.content,
             'timestamp': self.timestamp.isoformat(),
-            'is_read': self.is_read
+            'is_read': self.is_read,
+            'sender': {
+                'id': sender_user.id,
+                'username': sender_user.username,
+                'nickname': sender_user.nickname,
+                'avatar': sender_user.avatar
+            } if sender_user else None,
+            'receiver': {
+                'id': receiver_user.id,
+                'username': receiver_user.username,
+                'nickname': receiver_user.nickname,
+                'avatar': receiver_user.avatar
+            } if receiver_user else None
         } 
