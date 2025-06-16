@@ -248,6 +248,36 @@ def get_pending_friend_requests_count():
     ).count()
     return jsonify({'count': count})
 
+# 获取用户发送的好友请求
+@api.route('/friends/sent_requests', methods=['GET'])
+@jwt_required()
+def get_sent_friend_requests():
+    current_user_id = get_jwt_identity()
+    
+    sent_requests = FriendRequest.query.filter_by(
+        sender_id=current_user_id
+    ).all()
+    
+    requests_data = []
+    for req in sent_requests:
+        receiver = User.query.get(req.receiver_id)
+        if receiver:
+            requests_data.append({
+                'id': req.id,
+                'sender_id': req.sender_id,
+                'receiver_id': req.receiver_id,
+                'status': req.status,
+                'timestamp': req.created_at.isoformat(),
+                'receiver': {
+                    'id': receiver.id,
+                    'username': receiver.username,
+                    'nickname': receiver.nickname,
+                    'avatar': receiver.avatar
+                }
+            })
+            
+    return jsonify(requests_data)
+
 # 删除好友
 @api.route('/friends/<int:friend_id>', methods=['DELETE'])
 @jwt_required()

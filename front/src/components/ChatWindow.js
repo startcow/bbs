@@ -15,7 +15,10 @@ const ChatWindow = ({ onClose, onMaximize }) => {
     const [searchResults, setSearchResults] = useState([]);
     const [friendRequests, setFriendRequests] = useState([]);
     const [friends, setFriends] = useState([]);
+    const [sentRequests, setSentRequests] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
+
+    const PROCESSED_SENT_REQUESTS_KEY = 'processedSentRequests';
 
     const mockMessages = {
         'user1': [
@@ -138,20 +141,28 @@ const ChatWindow = ({ onClose, onMaximize }) => {
         try {
             await api.post('/friends/request', { receiver_id: userId });
             alert('好友申请已发送');
+            await fetchSentFriendRequests();
         } catch (error) {
             alert(error.response?.data?.error || '发送好友申请失败');
         }
     };
 
     const handleFriendRequest = async (requestId, action) => {
+        console.log(`handleFriendRequest 被调用 - request_id: ${requestId}, action: ${action}`);
         try {
-            await api.put(`/friends/request/${requestId}`, { action });
+            const response = await api.put(`/friends/request/${requestId}`, { action });
+            console.log('处理好友申请API响应:', response);
             if (action === 'accept') {
+                console.log('正在刷新接收方好友列表...');
                 await fetchFriends();
+                console.log('接收方好友列表刷新完成。');
             }
+            console.log('正在刷新接收方好友申请列表...');
             await fetchFriendRequests();
+            console.log('接收方好友申请列表刷新完成。');
             alert(action === 'accept' ? '已添加好友' : '已拒绝好友申请');
         } catch (error) {
+            console.error('处理好友申请失败:', error);
             alert(error.response?.data?.error || '处理好友申请失败');
         }
     };
@@ -169,10 +180,13 @@ const ChatWindow = ({ onClose, onMaximize }) => {
     };
 
     const fetchFriends = async () => {
+        console.log('fetchFriends 被调用');
         try {
             setIsLoading(true);
             const response = await api.get('/friends');
-            setFriends(response.data || []);
+            console.log('获取好友列表API响应:', response);
+            setFriends(response || []);
+            console.log('friends 状态已更新为:', response || []);
         } catch (error) {
             console.error('获取好友列表失败:', error);
             setFriends([]);
@@ -182,10 +196,13 @@ const ChatWindow = ({ onClose, onMaximize }) => {
     };
 
     const fetchFriendRequests = async () => {
+        console.log('fetchFriendRequests 被调用');
         try {
             setIsLoading(true);
             const response = await api.get('/friends/requests');
+            console.log('获取好友申请列表API响应:', response);
             setFriendRequests(response || []);
+            console.log('friendRequests 状态已更新为:', response || []);
         } catch (error) {
             console.error('获取好友申请列表失败:', error);
             setFriendRequests([]);
@@ -194,9 +211,60 @@ const ChatWindow = ({ onClose, onMaximize }) => {
         }
     };
 
+    const fetchSentFriendRequests = async () => {
+        try {
+            const response = await api.get('/friends/sent_requests');
+            const currentSentRequests = response || [];
+            setSentRequests(currentSentRequests);
+
+            const previouslyProcessedRequestIds = new Set(
+                JSON.parse(localStorage.getItem(PROCESSED_SENT_REQUESTS_KEY) || '[]')
+            );
+
+            let newProcessedRequestIds = new Set(previouslyProcessedRequestIds);
+            let shouldRefreshFriends = false;
+
+            currentSentRequests.forEach(request => {
+                if (!previouslyProcessedRequestIds.has(request.id)) {
+                    if (request.status === 'rejected') {
+                        alert(`您的好友请求已被 ${request.receiver.nickname || request.receiver.username} 拒绝.`);
+                        newProcessedRequestIds.add(request.id);
+                    } else if (request.status === 'accepted') {
+                        shouldRefreshFriends = true;
+                        newProcessedRequestIds.add(request.id);
+                    }
+                }
+            });
+
+            if (newProcessedRequestIds.size > previouslyProcessedRequestIds.size) {
+                localStorage.setItem(PROCESSED_SENT_REQUESTS_KEY, JSON.stringify(Array.from(newProcessedRequestIds)));
+            }
+
+            if (shouldRefreshFriends) {
+                console.log('检测到新接受的已发送请求，正在刷新发送方好友列表...');
+                fetchFriends();
+            }
+
+        } catch (error) {
+            console.error('获取已发送好友请求失败:', error);
+            setSentRequests([]);
+        }
+    };
+
     useEffect(() => {
+        console.log('ChatWindow useEffect 触发');
         fetchFriends();
         fetchFriendRequests();
+        fetchSentFriendRequests();
+
+        const intervalId = setInterval(() => {
+            fetchFriends();
+            fetchFriendRequests();
+            fetchSentFriendRequests();
+        }, 15000);
+
+        return () => clearInterval(intervalId);
+
     }, []);
 
     const displaySearchResults = Array.isArray(searchResults) ? searchResults : [];
