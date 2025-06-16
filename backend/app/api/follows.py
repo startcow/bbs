@@ -1,8 +1,9 @@
 from flask import jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from . import api
-from app.models import User
+from app.models import User, Friendship, FriendRequest
 from app import db
+from datetime import datetime
 
 @api.route('/users/<int:user_id>/follow', methods=['POST'])
 @jwt_required()
@@ -104,3 +105,134 @@ def get_user_stats(user_id):
         
     except Exception as e:
         return jsonify({'message': f'获取用户统计失败: {str(e)}'}), 500
+
+# 发送好友申请
+@api.route('/friends/request', methods=['POST'])
+@jwt_required()
+def send_friend_request():
+    current_user_id = get_jwt_identity()
+    data = request.get_json()
+    receiver_id = data.get('receiver_id')
+    
+    if not receiver_id:
+        return jsonify({'error': '接收者ID不能为空'}), 400
+        
+    # 检查是否已经是好友
+    existing_friendship = Friendship.query.filter(
+        db.or_(
+            db.and_(Friendship.user_id == current_user_id, Friendship.friend_id == receiver_id),
+            db.and_(Friendship.user_id == receiver_id, Friendship.friend_id == current_user_id)
+        )
+    ).first()
+    
+    if existing_friendship:
+        return jsonify({'error': '已经是好友关系'}), 400
+        
+    # 检查是否已经发送过申请
+    existing_request = FriendRequest.query.filter_by(
+        sender_id=current_user_id,
+        receiver_id=receiver_id,
+        status='pending'
+    ).first()
+    
+    if existing_request:
+        return jsonify({'error': '已经发送过好友申请'}), 400
+        
+    friend_request = FriendRequest(
+        sender_id=current_user_id,
+        receiver_id=receiver_id
+    )
+    
+    db.session.add(friend_request)
+    db.session.commit()
+    
+    return jsonify({'message': '好友申请已发送'})
+
+# 处理好友申请
+@api.route('/friends/request/<int:request_id>', methods=['PUT'])
+@jwt_required()
+def handle_friend_request(request_id):
+    current_user_id = get_jwt_identity()
+    data = request.get_json()
+    action = data.get('action')  # accept 或 reject
+    
+    friend_request = FriendRequest.query.get_or_404(request_id)
+    
+    if friend_request.receiver_id != current_user_id:
+        return jsonify({'error': '无权处理此申请'}), 403
+        
+    if friend_request.status != 'pending':
+        return jsonify({'error': '此申请已处理'}), 400
+        
+    if action == 'accept':
+        # 创建双向好友关系
+        friendship1 = Friendship(user_id=current_user_id, friend_id=friend_request.sender_id)
+        friendship2 = Friendship(user_id=friend_request.sender_id, friend_id=current_user_id)
+        
+        db.session.add(friendship1)
+        db.session.add(friendship2)
+        friend_request.status = 'accepted'
+        
+    elif action == 'reject':
+        friend_request.status = 'rejected'
+        
+    else:
+        return jsonify({'error': '无效的操作'}), 400
+        
+    db.session.commit()
+    return jsonify({'message': '好友申请已处理'})
+
+# 获取好友列表
+@api.route('/friends', methods=['GET'])
+@jwt_required()
+def get_friends():
+    current_user_id = get_jwt_identity()
+    
+    friendships = Friendship.query.filter_by(user_id=current_user_id).all()
+    
+    friends = []
+    for friendship in friendships:
+        friend = User.query.get(friendship.friend_id)
+        friends.append({
+            'id': friend.id,
+            'username': friend.username,
+            'nickname': friend.nickname,
+            'avatar': friend.avatar
+        })
+        
+    return jsonify(friends)
+
+# 获取好友申请列表
+@api.route('/friends/requests', methods=['GET'])
+@jwt_required()
+def get_friend_requests():
+    current_user_id = get_jwt_identity()
+    
+    requests = FriendRequest.query.filter_by(
+        receiver_id=current_user_id,
+        status='pending'
+    ).all()
+    
+    return jsonify([{
+        'id': req.id,
+        'sender': {
+            'id': req.sender.id,
+            'username': req.sender.username,
+            'nickname': req.sender.nickname,
+            'avatar': req.sender.avatar
+        },
+        'created_at': req.created_at.isoformat()
+    } for req in requests])
+
+# 删除好友
+@api.route('/friends/<int:friend_id>', methods=['DELETE'])
+@jwt_required()
+def delete_friend(friend_id):
+    current_user_id = get_jwt_identity()
+    
+    # 删除双向好友关系
+    Friendship.query.filter_by(user_id=current_user_id, friend_id=friend_id).delete()
+    Friendship.query.filter_by(user_id=friend_id, friend_id=current_user_id).delete()
+    
+    db.session.commit()
+    return jsonify({'message': '好友已删除'})

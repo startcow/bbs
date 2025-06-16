@@ -1,5 +1,6 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import './ChatWindow.css';
+import api from '../api';
 
 const ChatWindow = ({ onClose, onMaximize }) => {
     const windowRef = useRef(null);
@@ -10,6 +11,11 @@ const ChatWindow = ({ onClose, onMaximize }) => {
     const [selectedUser, setSelectedUser] = useState(null);
     const [messages, setMessages] = useState({});
     const [newMessage, setNewMessage] = useState('');
+    const [searchQuery, setSearchQuery] = useState('');
+    const [searchResults, setSearchResults] = useState([]);
+    const [friendRequests, setFriendRequests] = useState([]);
+    const [friends, setFriends] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
 
     const mockMessages = {
         'user1': [
@@ -19,8 +25,18 @@ const ChatWindow = ({ onClose, onMaximize }) => {
         'user2': [
             { sender: 'user2', content: '今晚一起打球吗？🏀', timestamp: '24/6/12' },
             { sender: 'me', content: '好啊，几点？', timestamp: '24/6/12' }
+        ],
+        'admin': [
+            { sender: 'admin', content: '欢迎使用聊天功能！', timestamp: '24/6/14' },
+            { sender: 'me', content: '谢谢！', timestamp: '24/6/14' }
         ]
     };
+
+    const mockUsers = [
+        { id: 1, username: 'user1', nickname: '用户1', avatar: 'https://i.imgtg.com/2023/05/19/ZQw6v.jpg' },
+        { id: 2, username: 'user2', nickname: '用户2', avatar: 'https://i.imgtg.com/2023/05/19/ZQw6v.jpg' },
+        { id: 3, username: 'admin', nickname: '管理员', avatar: 'https://i.imgtg.com/2023/05/19/ZQw6v.jpg' }
+    ];
 
     const handleUserClick = (username) => {
         setSelectedUser(username);
@@ -99,6 +115,96 @@ const ChatWindow = ({ onClose, onMaximize }) => {
         ? { left: 0, top: 0, width: '100vw', height: '100vh', borderRadius: 0 }
         : { left: rel.x, top: rel.y };
 
+    const handleSearch = async (e) => {
+        const query = e.target.value;
+        setSearchQuery(query);
+
+        if (query.trim()) {
+            try {
+                const response = await api.get(`/users/search?query=${encodeURIComponent(query)}`);
+                console.log('搜索用户API完整响应对象:', response);
+                console.log('搜索用户API响应数据:', response.data);
+                setSearchResults(response || []);
+            } catch (error) {
+                console.error('搜索用户失败:', error);
+                setSearchResults([]);
+            }
+        } else {
+            setSearchResults([]);
+        }
+    };
+
+    const handleAddFriend = async (userId) => {
+        try {
+            await api.post('/friends/request', { receiver_id: userId });
+            alert('好友申请已发送');
+        } catch (error) {
+            alert(error.response?.data?.error || '发送好友申请失败');
+        }
+    };
+
+    const handleFriendRequest = async (requestId, action) => {
+        try {
+            await api.put(`/friends/request/${requestId}`, { action });
+            if (action === 'accept') {
+                await fetchFriends();
+            }
+            await fetchFriendRequests();
+            alert(action === 'accept' ? '已添加好友' : '已拒绝好友申请');
+        } catch (error) {
+            alert(error.response?.data?.error || '处理好友申请失败');
+        }
+    };
+
+    const handleDeleteFriend = async (friendId) => {
+        if (window.confirm('确定要删除此好友吗？')) {
+            try {
+                await api.delete(`/friends/${friendId}`);
+                await fetchFriends();
+                alert('好友已删除');
+            } catch (error) {
+                alert(error.response?.data?.error || '删除好友失败');
+            }
+        }
+    };
+
+    const fetchFriends = async () => {
+        try {
+            setIsLoading(true);
+            const response = await api.get('/friends');
+            setFriends(response.data || []);
+        } catch (error) {
+            console.error('获取好友列表失败:', error);
+            setFriends([]);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const fetchFriendRequests = async () => {
+        try {
+            setIsLoading(true);
+            const response = await api.get('/friends/requests');
+            setFriendRequests(response.data || []);
+        } catch (error) {
+            console.error('获取好友申请列表失败:', error);
+            setFriendRequests([]);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchFriends();
+        fetchFriendRequests();
+    }, []);
+
+    const displaySearchResults = Array.isArray(searchResults) ? searchResults : [];
+    const displayFriendRequests = Array.isArray(friendRequests) ? friendRequests : [];
+
+    console.log('ChatWindow组件渲染 - searchResults:', searchResults, 'length:', searchResults?.length);
+    console.log('ChatWindow组件渲染 - displaySearchResults:', displaySearchResults, 'length:', displaySearchResults.length);
+
     return (
         <div
             ref={windowRef}
@@ -120,30 +226,91 @@ const ChatWindow = ({ onClose, onMaximize }) => {
                         <div className="chat-username"> 是我啊 <span className="chat-verified">✔</span></div>
                     </div>
                     <div className="chat-search">
-                        <input className="chat-search-input" placeholder="搜索" />
-                        <button className="chat-search-btn">+</button>
+                        <input
+                            className="chat-search-input"
+                            placeholder="搜索用户..."
+                            value={searchQuery}
+                            onChange={handleSearch}
+                        />
                     </div>
                     <div className="chat-tabs">
                         <span className="chat-tab chat-tab-active">好友</span>
                         <span className="chat-tab">群聊</span>
                     </div>
+                    {displaySearchResults.length > 0 && (
+                        <div className="search-results">
+                            {displaySearchResults.map(user => (
+                                <div key={user.id} className="search-result-item">
+                                    <img src={user.avatar} alt={user.username} />
+                                    <div className="search-result-info">
+                                        <div className="search-result-name">{user.nickname}</div>
+                                        <div className="search-result-username">{user.username}</div>
+                                    </div>
+                                    {friends && !friends.some(f => f.id === user.id) && (
+                                        <button
+                                            className="search-result-add"
+                                            onClick={() => handleAddFriend(user.id)}
+                                        >
+                                            添加好友
+                                        </button>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                    {displayFriendRequests.length > 0 && (
+                        <div className="friend-requests">
+                            <div className="friend-requests-title">好友申请</div>
+                            {displayFriendRequests.map(request => (
+                                <div key={request.id} className="friend-request-item">
+                                    <img src={request.sender.avatar} alt={request.sender.username} />
+                                    <div className="friend-request-info">
+                                        <div className="friend-request-name">{request.sender.nickname}</div>
+                                        <div className="friend-request-username">{request.sender.username}</div>
+                                    </div>
+                                    <div className="friend-request-actions">
+                                        <button
+                                            className="friend-request-accept"
+                                            onClick={() => handleFriendRequest(request.id, 'accept')}
+                                        >
+                                            同意
+                                        </button>
+                                        <button
+                                            className="friend-request-reject"
+                                            onClick={() => handleFriendRequest(request.id, 'reject')}
+                                        >
+                                            拒绝
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                     <div className="chat-friends">
-                        <div className="chat-friend-item" onClick={() => handleUserClick('user1')}>
-                            <img className="chat-friend-avatar" src="https://i.imgtg.com/2023/05/19/ZQw6v.jpg" alt="f1" />
-                            <div className="chat-friend-info">
-                                <div className="chat-friend-name">user1 <span className="chat-verified">✔</span></div>
-                                <div className="chat-friend-msg">你好，请问作业做完了吗？</div>
-                            </div>
-                            <div className="chat-friend-date">24/6/13</div>
-                        </div>
-                        <div className="chat-friend-item" onClick={() => handleUserClick('user2')}>
-                            <img className="chat-friend-avatar" src="https://i.imgtg.com/2023/05/19/ZQw6v.jpg" alt="f2" />
-                            <div className="chat-friend-info">
-                                <div className="chat-friend-name">user2</div>
-                                <div className="chat-friend-msg">今晚一起打球吗？🏀</div>
-                            </div>
-                            <div className="chat-friend-date">24/6/12</div>
-                        </div>
+                        {isLoading ? (
+                            <div className="chat-loading">加载中...</div>
+                        ) : friends && friends.length > 0 ? (
+                            friends.map(friend => (
+                                <div key={friend.id} className="chat-friend-item" onClick={() => handleUserClick(friend.username)}>
+                                    <img className="chat-friend-avatar" src={friend.avatar} alt={friend.username} />
+                                    <div className="chat-friend-info">
+                                        <div className="chat-friend-name">{friend.nickname}</div>
+                                        <div className="chat-friend-msg">点击开始聊天</div>
+                                    </div>
+                                    <button
+                                        className="chat-friend-delete"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleDeleteFriend(friend.id);
+                                        }}
+                                    >
+                                        删除
+                                    </button>
+                                </div>
+                            ))
+                        ) : (
+                            <div className="chat-no-friends">暂无好友</div>
+                        )}
                     </div>
                 </div>
                 <div className="chat-content">
