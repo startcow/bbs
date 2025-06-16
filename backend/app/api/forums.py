@@ -7,54 +7,57 @@ from datetime import datetime, date
 
 @api.route('/forums', methods=['GET'])
 def get_forums():
-    sort_by = request.args.get('sort_by', 'latest', type=str)
-    
-    # 获取今天的日期范围
-    today = date.today()
-    today_start = datetime.combine(today, datetime.min.time())
-    today_end = datetime.combine(today, datetime.max.time())
-
-    # 获取所有板块（按名称去重）
-    forums_query = db.session.query(
-        Forum.name,
-        db.func.min(Forum.icon).label('icon'),
-        db.func.min(Forum.description).label('description'),
-        db.func.min(Forum.id).label('id')
-    ).group_by(Forum.name, Forum.icon, Forum.description)
-
-    forums_data = forums_query.all()
-
-    # 将查询结果转换为字典列表，以便前端使用
-    processed_forums = []
-    for name, icon, description, id in forums_data:
-        # 计算该板块的实际总帖数（从Post表中统计）
-        total_post_count = Post.query.filter_by(forum_id=id).count()
+    try:
+        sort_by = request.args.get('sort_by', 'latest', type=str)
         
-        # 计算今日新帖数
-        today_posts_count = Post.query.filter(
-            Post.forum_id == id,
-            Post.created_at >= today_start,
-            Post.created_at <= today_end
-        ).count()
-        
-        processed_forums.append({
-            'id': id,
-            'name': name,
-            'total_post_count': total_post_count or 0,
-            'today_posts_count': today_posts_count,
-            'icon': icon,
-            'description': description
+        # 获取今天的日期范围
+        today = date.today()
+        today_start = datetime.combine(today, datetime.min.time())
+        today_end = datetime.combine(today, datetime.max.time())
+
+        # 获取所有板块（按名称去重）
+        forums_query = db.session.query(
+            Forum.name,
+            db.func.min(Forum.icon).label('icon'),
+            db.func.min(Forum.description).label('description'),
+            db.func.min(Forum.id).label('id')
+        ).group_by(Forum.name, Forum.icon, Forum.description)
+
+        forums_data = forums_query.all()
+
+        # 将查询结果转换为字典列表，以便前端使用
+        processed_forums = []
+        for name, icon, description, id in forums_data:
+            # 计算该板块的实际总帖数（从Post表中统计）
+            total_post_count = Post.query.filter_by(forum_id=id).count()
+            
+            # 计算今日新帖数
+            today_posts_count = Post.query.filter(
+                Post.forum_id == id,
+                Post.created_at >= today_start,
+                Post.created_at <= today_end
+            ).count()
+            
+            processed_forums.append({
+                'id': id,
+                'name': name,
+                'total_post_count': total_post_count or 0,
+                'today_posts_count': today_posts_count,
+                'icon': icon,
+                'description': description
+            })
+
+        # 应用排序
+        if sort_by == 'latest':
+            processed_forums.sort(key=lambda x: x['total_post_count'], reverse=True)
+        elif sort_by == 'popular':
+            processed_forums.sort(key=lambda x: x['total_post_count'], reverse=True)
+
+        return jsonify({
+            'forums': processed_forums
         })
-
-    # 应用排序
-    if sort_by == 'latest':
-        processed_forums.sort(key=lambda x: x['total_post_count'], reverse=True)
-    elif sort_by == 'popular':
-        processed_forums.sort(key=lambda x: x['total_post_count'], reverse=True)
-
-    return jsonify({
-        'forums': processed_forums
-    })
+    except Exception as e:
+        return jsonify({'message': f'获取板块列表失败: {str(e)}'}), 500
 
 @api.route('/forums/<int:forum_id>', methods=['GET'])
 def get_forum(forum_id):

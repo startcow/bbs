@@ -5,6 +5,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import '../styles/HomePage.css';
 import { getLatestPosts } from '../api/posts';
 import { getNotices } from '../api/spider';
+import api from '../api'; // 导入 api 实例
 import RecentActivity from '../components/RecentActivity';
 
 const HomePage = () => {
@@ -29,35 +30,20 @@ const HomePage = () => {
           setNotices(noticeResp.notices.slice(0, 5));
         }
         // 获取热门帖子 (按点赞数排序)
-        const postsResponse = await fetch('/api/posts?sort_by=popular&per_page=3'); // 限制数量为3个
-        if (!postsResponse.ok) {
-          throw new Error(`HTTP error! status: ${postsResponse.status}`);
-        }
-        const postsData = await postsResponse.json();
-        setHotPosts(postsData.posts);
+        const postsResponse = await api.get('/posts?sort_by=popular&per_page=3'); // 使用 api.get
+        setHotPosts(postsResponse.posts);
 
         // 获取热门板块 (按帖子数量排序)
-        const forumsResponse = await fetch('/api/forums?sort_by=popular');
-        if (!forumsResponse.ok) {
-          throw new Error(`HTTP error! status: ${forumsResponse.status}`);
-        }
-        const forumsData = await forumsResponse.json();
-        setPopularForums(forumsData.forums);
+        const forumsResponse = await api.get('/forums?sort_by=popular'); // 使用 api.get
+        setPopularForums(forumsResponse.forums);
 
         // 获取最新帖子
-        const latestPostsResponse = await fetch('/api/posts?sort_by=latest&per_page=5');
-        if (!latestPostsResponse.ok) {
-          throw new Error(`HTTP error! status: ${latestPostsResponse.status}`);
-        }
-        const latestPostsData = await latestPostsResponse.json();
-        setLatestPosts(latestPostsData.posts);
+        const latestPostsResponse = await api.get('/posts?sort_by=latest&per_page=5'); // 使用 api.get
+        setLatestPosts(latestPostsResponse.posts);
 
         // 获取所有板块
-        const allForumsResponse = await fetch('/api/forums');
-        if (allForumsResponse.ok) {
-          const allForumsData = await allForumsResponse.json();
-          setAllForums(allForumsData.forums);
-        }
+        const allForumsResponse = await api.get('/forums'); // 使用 api.get
+        setAllForums(allForumsResponse.forums);
 
       } catch (error) {
         console.error("获取首页数据失败:", error);
@@ -73,6 +59,7 @@ const HomePage = () => {
   useEffect(() => {
     const fetchLatestPosts = async () => {
       try {
+        // 这里的 getLatestPosts 已经使用了 api 实例，不需要修改
         const response = await getLatestPosts({ per_page: 10 });
         if (response.data && response.data.posts) {
           setLatestPosts(response.data.posts);
@@ -199,7 +186,7 @@ const HomePage = () => {
                 ))}
               </div>
             </section>
-          <section className="mb-5">
+            <section className="mb-5">
               <div className="d-flex justify-content-between align-items-center mb-4">
                 <h2 className="h3 mb-0">📢 最新动态</h2>
                 <Button as={Link} to="/posts" variant="outline-primary" size="sm">
