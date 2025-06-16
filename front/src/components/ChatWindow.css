@@ -66,6 +66,7 @@
     border-right: 1px solid #eee;
     display: flex;
     flex-direction: column;
+    position: relative;
 }
 
 .chat-profile {
@@ -233,4 +234,149 @@
     font-size: 16px;
     color: #666;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.search-results {
+    position: absolute;
+    top: 160px;
+    left: 0;
+    right: 0;
+    background: #fff;
+    border-bottom: 1px solid #eee;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    z-index: 10;
+    overflow-y: auto;
+    max-height: calc(100% - 160px);
+    border: 2px solid red;
+}
+
+.search-result-item {
+    display: flex;
+    align-items: center;
+    padding: 8px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.search-result-item img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin-right: 10px;
+}
+
+.search-result-info {
+    flex: 1;
+}
+
+.search-result-name {
+    font-weight: bold;
+}
+
+.search-result-username {
+    font-size: 12px;
+    color: #888;
+}
+
+.search-result-add {
+    padding: 4px 8px;
+    background: #1aad19;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.search-result-add:hover {
+    background: #129611;
+}
+
+.friend-requests {
+    position: absolute;
+    top: 160px;
+    left: 0;
+    right: 0;
+    background: #fff;
+    border-bottom: 1px solid #eee;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    z-index: 10;
+    overflow-y: auto;
+    max-height: calc(100% - 160px);
+    border: 2px solid blue;
+}
+
+.friend-requests-title {
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+
+.friend-request-item {
+    display: flex;
+    align-items: center;
+    padding: 8px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.friend-request-item img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin-right: 10px;
+}
+
+.friend-request-info {
+    flex: 1;
+}
+
+.friend-request-name {
+    font-weight: bold;
+}
+
+.friend-request-username {
+    font-size: 12px;
+    color: #888;
+}
+
+.friend-request-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.friend-request-accept {
+    padding: 4px 8px;
+    background: #1aad19;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.friend-request-accept:hover {
+    background: #129611;
+}
+
+.friend-request-reject {
+    padding: 4px 8px;
+    background: #ff4d4f;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.friend-request-reject:hover {
+    background: #ff7875;
+}
+
+.chat-friend-delete {
+    padding: 4px 8px;
+    background: #ff4d4f;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-left: 8px;
+}
+
+.chat-friend-delete:hover {
+    background: #ff7875;
 }

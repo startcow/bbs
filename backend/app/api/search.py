@@ -4,6 +4,7 @@ from ..models.post import Post
 from ..models.user import User
 from ..models.forum import Forum
 from sqlalchemy import or_
+from flask_jwt_extended import jwt_required, get_jwt_identity
 
 @api.route('/search', methods=['GET'])
 def search():
@@ -48,3 +49,28 @@ def search():
 
     except Exception as e:
         return jsonify({'message': f'搜索失败: {str(e)}'}), 500
+
+# 专门用于好友搜索的API
+@api.route('/users/search', methods=['GET'])
+@jwt_required()
+def search_users_for_friends():
+    current_user_id = get_jwt_identity()
+    query = request.args.get('query', '')
+    
+    if not query:
+        return jsonify({'error': '搜索关键词不能为空'}), 400
+        
+    users = User.query.filter(
+        or_(
+            User.username.ilike(f'%{query}%'),
+            User.nickname.ilike(f'%{query}%')
+        ),
+        User.id != current_user_id
+    ).all()
+    
+    return jsonify([{
+        'id': user.id,
+        'username': user.username,
+        'nickname': user.nickname,
+        'avatar': user.avatar
+    } for user in users])
