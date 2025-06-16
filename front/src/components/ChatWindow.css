@@ -2,12 +2,12 @@
     position: fixed;
     width: 800px;
     height: 500px;
-    background: linear-gradient(135deg, #f0f2f5, #e0e4eb);
-    /* 柔和渐变背景 */
-    border-radius: 20px;
-    /* 更大的圆角 */
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
-    /* 更强的阴影 */
+    background: #f7f9fc;
+    /* 更浅的背景 */
+    border-radius: 12px;
+    /* 柔和圆角 */
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+    /* 柔和阴影 */
     overflow: hidden;
     z-index: 9999;
     user-select: none;
@@ -15,25 +15,23 @@
 }
 
 .chat-header {
-    height: 55px;
-    /* 增加高度 */
-    background: linear-gradient(to right, #ffffff, #f0f0f0);
-    /* 浅色渐变背景 */
-    border-bottom: 1px solid #e0e0e0;
-    /* 柔和边框 */
+    height: 50px;
+    /* 调整高度 */
+    background: #ffffff;
+    /* 纯白背景 */
+    border-bottom: 1px solid #f0f0f0;
+    /* 更细边框 */
     display: flex;
     align-items: center;
     padding: 0 20px;
     cursor: grab;
-    /* 拖动光标 */
-    font-size: 18px;
-    /* 字体增大 */
-    font-weight: 600;
-    color: #333;
-    /* 深色文字 */
+    font-size: 16px;
+    font-weight: 500;
+    color: #555;
+    /* 柔和颜色 */
     position: relative;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-    /* 细微阴影 */
+    box-shadow: none;
+    /* 移除头部阴影 */
 }
 
 .chat-header.dragging {
@@ -41,126 +39,126 @@
 }
 
 .chat-logo {
-    font-size: 28px;
-    /* 更大图标 */
-    margin-right: 10px;
-    color: #1aad19;
-    /* 品牌色 */
+    font-size: 24px;
+    /* 调整图标大小 */
+    margin-right: 8px;
+    color: #6a5acd;
+    /* 新的品牌色，更柔和 */
 }
 
 .chat-title {
     flex: 1;
-    color: #333;
+    color: #444;
+    font-weight: 600;
 }
 
 .chat-header-btns {
     display: flex;
-    gap: 10px;
+    gap: 8px;
 }
 
 .chat-header-btn {
-    width: 30px;
-    /* 按钮更大 */
-    height: 30px;
+    width: 28px;
+    /* 调整按钮大小 */
+    height: 28px;
+    border-radius: 50%;
+    font-size: 14px;
+    color: #888;
+    background: none;
+    border: none;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border-radius: 50%;
-    /* 圆形按钮 */
     cursor: pointer;
-    color: #666;
-    /* 柔和颜色 */
-    font-size: 18px;
-    /* 字体增大 */
-    transition: background 0.3s ease, color 0.3s ease;
+    transition: background 0.2s ease, color 0.2s ease;
 }
 
 .chat-header-btn:hover {
-    background: #e9e9e9;
-    /* 悬停背景 */
-    color: #333;
+    background: #eef2f7;
+    /* 柔和悬停背景 */
+    color: #555;
 }
 
 .chat-body {
     display: flex;
-    height: calc(100% - 55px);
+    height: calc(100% - 50px);
     /* 适应新头部高度 */
 }
 
 .chat-sidebar {
-    width: 300px;
-    /* 侧边栏更宽 */
+    width: 280px;
+    /* 调整侧边栏宽度 */
     background: #ffffff;
     /* 纯白背景 */
-    border-right: 1px solid #e0e0e0;
+    border-right: 1px solid #f0f0f0;
+    /* 柔和边框 */
     display: flex;
     flex-direction: column;
     position: relative;
-    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.02);
-    /* 侧边栏阴影 */
+    box-shadow: 1px 0 5px rgba(0, 0, 0, 0.02);
+    /* 侧边栏柔和阴影 */
 }
 
 .chat-profile {
     display: flex;
     align-items: center;
-    padding: 20px 20px 15px 20px;
-    /* 增加内边距 */
-    border-bottom: 1px solid #f0f0f0;
+    padding: 15px 20px;
+    border-bottom: 1px solid #f5f5f5;
+    background: #fcfcfc;
 }
 
 .chat-avatar {
-    width: 60px;
-    /* 更大头像 */
-    height: 60px;
+    width: 50px;
+    /* 调整头像大小 */
+    height: 50px;
     border-radius: 50%;
-    margin-right: 15px;
-    border: 3px solid #fff;
-    /* 更粗的边框 */
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    /* 更强阴影 */
+    margin-right: 12px;
+    border: 2px solid #fff;
+    /* 柔和边框 */
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    /* 柔和阴影 */
 }
 
 .chat-username {
-    font-size: 18px;
-    font-weight: 700;
-    /* 更粗字体 */
-    color: #222;
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
     display: flex;
     align-items: center;
 }
 
 .chat-verified {
-    color: #1aad19;
-    font-size: 16px;
-    margin-left: 6px;
+    color: #6a5acd;
+    /* 品牌色 */
+    font-size: 14px;
+    margin-left: 5px;
 }
 
 .chat-search {
     display: flex;
     align-items: center;
     padding: 15px 20px;
-    border-bottom: 1px solid #f0f0f0;
+    border-bottom: 1px solid #f5f5f5;
 }
 
 .chat-search-input {
     flex: 1;
-    border: 1px solid #d0d0d0;
-    border-radius: 10px;
+    border: 1px solid #e0e0e0;
+    border-radius: 20px;
     /* 更大圆角 */
     padding: 8px 15px;
-    /* 增加内边距 */
-    font-size: 16px;
+    font-size: 15px;
     outline: none;
     background: #fdfdfd;
-    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
-    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.03);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .chat-search-input:focus {
-    border-color: #1aad19;
-    /* 聚焦时边框颜色 */
-    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.08), 0 0 0 3px rgba(26, 173, 25, 0.2);
-    /* 聚焦时阴影 */
+    border-color: #6a5acd;
+    /* 聚焦时品牌色 */
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05), 0 0 0 3px rgba(106, 90, 205, 0.15);
+    /* 聚焦时柔和阴影 */
 }
 
 .chat-tabs {
@@ -173,23 +171,24 @@
 .chat-tab {
     flex: 1;
     text-align: center;
-    padding: 12px 0 10px 0;
-    font-size: 16px;
+    padding: 10px 0;
+    font-size: 15px;
     color: #888;
     cursor: pointer;
-    border-bottom: 3px solid transparent;
-    /* 更粗的下划线 */
-    transition: color 0.3s ease, border-color 0.3s ease;
+    border-bottom: 2px solid transparent;
+    /* 调整下划线粗细 */
+    transition: color 0.2s ease, border-color 0.2s ease;
     font-weight: 500;
 }
 
 .chat-tab:hover {
-    color: #555;
+    color: #6a5acd;
+    /* 悬停时品牌色 */
 }
 
 .chat-tab-active {
-    color: #1aad19;
-    border-bottom: 3px solid #1aad19;
+    color: #6a5acd;
+    border-bottom: 2px solid #6a5acd;
     font-weight: 600;
 }
 
@@ -203,10 +202,10 @@
 .chat-friend-item {
     display: flex;
     align-items: center;
-    padding: 12px 20px;
+    padding: 10px 20px;
     cursor: pointer;
     transition: background 0.2s ease;
-    border-bottom: 1px solid #f5f5f5;
+    border-bottom: 1px solid #f8f8f8;
     /* 更细更柔和的边框 */
 }
 
@@ -215,26 +214,26 @@
 }
 
 .chat-friend-item:hover {
-    background: #e6f7e6;
-    /* 悬停背景 */
+    background: #f3f6fa;
+    /* 柔和悬停背景 */
 }
 
 .chat-friend-item-active {
-    background: #d8f5d8;
+    background: #eef2f7;
     /* 选中背景 */
-    border-left: 4px solid #1aad19;
+    border-left: 3px solid #6a5acd;
     /* 选中时左边框 */
-    padding-left: 16px;
+    padding-left: 17px;
     /* 调整内边距 */
 }
 
 .chat-friend-avatar {
-    width: 48px;
-    /* 更大头像 */
-    height: 48px;
+    width: 40px;
+    /* 调整头像大小 */
+    height: 40px;
     border-radius: 50%;
-    margin-right: 15px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    margin-right: 12px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
 }
 
 .chat-friend-info {
@@ -243,8 +242,8 @@
 }
 
 .chat-friend-name {
-    font-size: 16px;
-    color: #222;
+    font-size: 15px;
+    color: #333;
     font-weight: 600;
     margin-bottom: 2px;
     white-space: nowrap;
@@ -253,16 +252,16 @@
 }
 
 .chat-friend-msg {
-    font-size: 13px;
-    color: #888;
+    font-size: 12px;
+    color: #999;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
 .chat-friend-date {
-    font-size: 12px;
-    color: #aaa;
+    font-size: 10px;
+    color: #ccc;
     white-space: nowrap;
 }
 
@@ -271,21 +270,19 @@
     border: none;
     color: #ccc;
     /* 柔和颜色 */
-    font-size: 18px;
+    font-size: 16px;
     cursor: pointer;
     opacity: 0;
-    /* 默认隐藏 */
-    transition: color 0.3s ease, opacity 0.3s ease;
-    margin-left: 10px;
+    transition: color 0.2s ease, opacity 0.2s ease;
+    margin-left: 8px;
 }
 
 .chat-friend-item:hover .chat-friend-delete {
     opacity: 1;
-    /* 悬停显示 */
 }
 
 .chat-friend-delete:hover {
-    color: #ff4d4f;
+    color: #ff6b6b;
     /* 悬停变红 */
 }
 
@@ -304,21 +301,30 @@
     /* 白色背景 */
     border: 1px solid #e0e0e0;
     /* 柔和边框 */
-    border-radius: 10px;
-    /* 圆角 */
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    /* 阴影 */
+    border-radius: 8px;
+    /* 柔和圆角 */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    /* 柔和阴影 */
     overflow-y: auto;
     z-index: 1000;
-    padding: 10px 0;
+    padding: 8px 0;
+}
+
+.friend-requests-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #666;
+    padding: 8px 20px;
+    border-bottom: 1px solid #f0f0f0;
+    margin-bottom: 5px;
 }
 
 .search-result-item,
 .friend-request-item {
     display: flex;
     align-items: center;
-    padding: 10px 20px;
-    border-bottom: 1px solid #f5f5f5;
+    padding: 8px 20px;
+    border-bottom: 1px solid #f8f8f8;
 }
 
 .search-result-item:last-child,
@@ -328,10 +334,10 @@
 
 .search-result-item img,
 .friend-request-item img {
-    width: 44px;
-    height: 44px;
+    width: 38px;
+    height: 38px;
     border-radius: 50%;
-    margin-right: 15px;
+    margin-right: 12px;
 }
 
 .search-result-info,
@@ -342,7 +348,7 @@
 
 .search-result-name,
 .friend-request-name {
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 600;
     color: #333;
     margin-bottom: 2px;
@@ -350,41 +356,40 @@
 
 .search-result-username,
 .friend-request-username {
-    font-size: 13px;
+    font-size: 12px;
     color: #888;
 }
 
 .search-result-add,
 .friend-request-accept,
 .friend-request-reject {
-    padding: 6px 12px;
-    border-radius: 8px;
-    /* 更大圆角 */
-    font-size: 14px;
+    padding: 5px 10px;
+    border-radius: 15px;
+    /* 更大圆角，胶囊状 */
+    font-size: 13px;
     cursor: pointer;
-    transition: background 0.3s ease, color 0.3s ease;
+    transition: background 0.2s ease, color 0.2s ease;
 }
 
 .search-result-add {
-    background: #1aad19;
+    background: #6a5acd;
     color: white;
     border: none;
 }
 
 .search-result-add:hover {
-    background: #179b16;
+    background: #5a4bbf;
 }
 
 .friend-request-actions {
     display: flex;
-    gap: 8px;
+    gap: 6px;
     /* 按钮间距 */
-    margin-left: 15px;
+    margin-left: 10px;
 }
 
 .friend-request-accept {
     background: #28a745;
-    /* 绿色 */
     color: white;
     border: none;
 }
@@ -395,7 +400,6 @@
 
 .friend-request-reject {
     background: #dc3545;
-    /* 红色 */
     color: white;
     border: none;
 }
@@ -409,7 +413,7 @@
     flex: 1;
     display: flex;
     flex-direction: column;
-    background: #fdfdfd;
+    background: #f7f9fc;
     /* 浅色背景 */
 }
 
@@ -418,59 +422,95 @@
     overflow-y: auto;
     padding: 20px;
     /* 增加内边距 */
-    background: #fdfdfd;
+    background: #f7f9fc;
 }
 
-.chat-messages>div {
-    margin-bottom: 15px;
-    /* 增加消息间距 */
+.message-container {
+    display: flex;
+    align-items: flex-end;
+    /* 头像和气泡底部对齐 */
+    margin-bottom: 12px;
+    /* 消息间距 */
+}
+
+.message-container.sent {
+    justify-content: flex-end;
+    flex-direction: row-reverse;
+    /* 发送消息，头像在右侧 */
+}
+
+.message-container.received {
+    justify-content: flex-start;
+    flex-direction: row;
+    /* 接收消息，头像在左侧 */
+}
+
+.message-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    /* 防止头像缩小 */
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+.message-container.sent .message-avatar {
+    margin-left: 10px;
+    margin-right: 0;
+}
+
+.message-container.received .message-avatar {
+    margin-right: 10px;
+    margin-left: 0;
+}
+
+.message-content-wrapper {
     display: flex;
     flex-direction: column;
+    align-items: flex-start;
+    /* 默认左对齐，发送方会覆盖 */
 }
 
-.chat-messages>div.sent {
+.message-container.sent .message-content-wrapper {
     align-items: flex-end;
 }
 
-.chat-messages>div.received {
-    align-items: flex-start;
-}
-
-.chat-messages>div>div:first-child {
-    max-width: 70%;
+.message-bubble {
+    max-width: 65%;
     /* 限制消息宽度 */
-    padding: 12px 18px;
-    /* 增加气泡内边距 */
+    padding: 10px 15px;
     border-radius: 18px;
-    /* 更大圆角 */
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    /* 气泡阴影 */
     word-wrap: break-word;
     white-space: pre-wrap;
     /* 保留空白和换行 */
+    line-height: 1.4;
 }
 
-.chat-messages>div.sent>div:first-child {
-    background: linear-gradient(to right, #1aad19, #2ecc71);
-    /* 渐变绿色 */
+.message-container.sent .message-bubble {
+    background: linear-gradient(to right, #6a5acd, #8a7de0);
+    /* 渐变品牌色 */
     color: white;
-    border-bottom-right-radius: 4px;
+    border-bottom-right-radius: 6px;
     /* 右下角稍小圆角 */
 }
 
-.chat-messages>div.received>div:first-child {
-    background: #e0e0e0;
-    /* 浅灰色 */
+.message-container.received .message-bubble {
+    background: #ffffff;
+    /* 白色背景 */
     color: #333;
-    border-bottom-left-radius: 4px;
+    border: 1px solid #eee;
+    /* 浅色边框 */
+    border-bottom-left-radius: 6px;
     /* 左下角稍小圆角 */
 }
 
-.chat-messages>div>div:last-child {
-    font-size: 11px;
-    color: #999;
+.message-timestamp {
+    font-size: 10px;
+    color: #a0a0a0;
     /* 柔和时间颜色 */
-    margin-top: 5px;
+    margin-top: 4px;
+    white-space: nowrap;
 }
 
 .chat-input-area {
@@ -483,37 +523,37 @@
 
 .chat-input-area input {
     flex: 1;
-    padding: 10px 15px;
+    padding: 10px 18px;
     border: 1px solid #d0d0d0;
-    border-radius: 20px;
+    border-radius: 22px;
     /* 更大圆角 */
     outline: none;
     font-size: 16px;
     margin-right: 15px;
     box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
-    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .chat-input-area input:focus {
-    border-color: #1aad19;
-    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.08), 0 0 0 3px rgba(26, 173, 25, 0.2);
+    border-color: #6a5acd;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.08), 0 0 0 3px rgba(106, 90, 205, 0.15);
 }
 
 .chat-input-area button {
     padding: 10px 25px;
-    background: #1aad19;
+    background: #6a5acd;
     color: white;
     border: none;
-    border-radius: 20px;
+    border-radius: 22px;
     /* 更大圆角 */
     cursor: pointer;
     font-size: 16px;
     font-weight: 600;
-    transition: background 0.3s ease;
+    transition: background 0.2s ease;
 }
 
 .chat-input-area button:hover {
-    background: #179b16;
+    background: #5a4bbf;
 }
 
 /* 暂无好友或加载中 */
@@ -530,7 +570,8 @@
 .chat-messages::-webkit-scrollbar,
 .search-results::-webkit-scrollbar,
 .friend-requests::-webkit-scrollbar {
-    width: 8px;
+    width: 6px;
+    /* 更细滚动条 */
 }
 
 .chat-friends::-webkit-scrollbar-track,

@@ -411,23 +411,34 @@ const ChatWindow = ({ onClose, onMaximize }) => {
                                 {messages.map((msg, index) => (
                                     <div
                                         key={msg.id || index}
-                                        style={{
+                                        className={`message-container ${msg.sender_id === currentUser.id ? 'sent' : 'received'}`}
+                                    >
+                                        {msg.sender_id !== currentUser.id && (
+                                            <img
+                                                className="message-avatar"
+                                                src={msg.sender?.avatar || 'https://i.imgtg.com/2023/05/19/ZQw6v.jpg'}
+                                                alt={msg.sender?.username}
+                                            />
+                                        )}
+                                        <div style={{
                                             marginBottom: '10px',
                                             textAlign: msg.sender_id === currentUser.id ? 'right' : 'left'
                                         }}
-                                    >
-                                        <div style={{
-                                            display: 'inline-block',
-                                            padding: '8px 12px',
-                                            borderRadius: '8px',
-                                            background: msg.sender_id === currentUser.id ? '#1aad19' : '#f0f0f0',
-                                            color: msg.sender_id === currentUser.id ? 'white' : 'black'
-                                        }}>
-                                            {msg.content}
+                                        >
+                                            <div className="message-bubble">
+                                                {msg.content}
+                                            </div>
+                                            <div className="message-timestamp">
+                                                {new Date(msg.timestamp + 'Z').toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
+                                            </div>
                                         </div>
-                                        <div style={{ fontSize: '12px', color: '#888', marginTop: '4px' }}>
-                                            {new Date(msg.timestamp + 'Z').toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
-                                        </div>
+                                        {msg.sender_id === currentUser.id && (
+                                            <img
+                                                className="message-avatar"
+                                                src={currentUser?.avatar || 'https://i.imgtg.com/2023/05/19/ZQw6v.jpg'}
+                                                alt={currentUser?.username}
+                                            />
+                                        )}
                                     </div>
                                 ))}
                             </div>
