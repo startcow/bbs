@@ -23,3 +23,7 @@ export const removeModerator = (forumId, moderatorId) => {
 export const getForumStats = () => {
   return api.get('/forums/stats');
 };
+
+export const createForum = (forumData) => {
+  return api.post('/forums', forumData);
+};

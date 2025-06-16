@@ -1,5 +1,6 @@
 from .user import User
 from .forum import Forum
+
 from .post import Post
 from .comment import Comment
 from .follow import user_follows

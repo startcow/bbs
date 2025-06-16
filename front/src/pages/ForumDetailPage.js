@@ -42,12 +42,15 @@ const ForumDetailPage = () => {
   }, [id, page, sortBy]);
   const handleAddModerator = async (userId) => {
     try {
-      await addModerator(id, userId);
       // 重新获取板块信息以更新版主列表
-      const { data: forumData } = await getForum(id);
+      const forumData = await getForum(id);
       setForum(forumData);
+      alert('添加版主成功！');
     } catch (error) {
-      console.error('添加版主失败:', error);
+      console.error('获取板块信息失败:', error);
+      // 显示后端返回的具体错误信息
+      const errorMessage = error.response?.data?.message || error.message || '获取板块信息失败';
+      alert(errorMessage);
     }
   };
   const handleRemoveModerator = async (moderatorId) => {
@@ -56,10 +59,14 @@ const ForumDetailPage = () => {
     try {
       await removeModerator(id, moderatorId);
       // 重新获取板块信息以更新版主列表
-      const { data: forumData } = await getForum(id);
+      const forumData = await getForum(id);
       setForum(forumData);
+      alert('移除版主成功！');
     } catch (error) {
       console.error('移除版主失败:', error);
+      // 显示后端返回的具体错误信息
+      const errorMessage = error.response?.data?.message || error.message || '移除版主失败';
+      alert(errorMessage);
     }
   };
 
@@ -231,11 +238,13 @@ const ForumDetailPage = () => {
       </nav>
 
       <ModeratorModal
-        show={showModeratorModal}
-        onHide={() => setShowModeratorModal(false)}
-        forumId={id}
-        onAddModerator={handleAddModerator}
-      />
+          show={showModeratorModal}
+          onHide={() => {
+            setShowModeratorModal(false);
+          }}
+          forumId={id}
+          onAddModerator={handleAddModerator}
+        />
     </div>
   );
 };

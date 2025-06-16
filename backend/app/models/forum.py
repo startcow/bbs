@@ -24,5 +24,6 @@ class Forum(db.Model):
             'icon': self.icon,
             'post_count': self.post_count,
             'moderator': self.moderator.to_dict() if self.moderator else None,
+            'moderators': [self.moderator.to_dict()] if self.moderator else [],
             'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S')
         }

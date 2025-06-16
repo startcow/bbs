@@ -1,33 +1,44 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+import { Button } from 'react-bootstrap';
 import { getForums, getForumStats } from '../api/forums';
+import { isAdmin } from '../utils/permissions';
+import CreateForumModal from '../components/CreateForumModal';
 
 const ForumListPage = () => {
+  const { user } = useSelector(state => state.auth);
   const [forums, setForums] = useState([]);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+
+  const fetchData = async () => {
+    try {
+      const [forumsData, statsData] = await Promise.all([
+        getForums(),
+        getForumStats()
+      ]);
+      console.log('获取到的板块数据:', forumsData);
+      console.log('获取到的统计数据:', statsData);
+      setForums(forumsData.forums);
+      setStats(statsData);
+      setLoading(false);
+    } catch (err) {
+      setError('获取数据失败');
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [forumsData, statsData] = await Promise.all([
-          getForums(),
-          getForumStats()
-        ]);
-        console.log('获取到的板块数据:', forumsData);
-        console.log('获取到的统计数据:', statsData);
-        setForums(forumsData.forums);
-        setStats(statsData);
-        setLoading(false);
-      } catch (err) {
-        setError('获取数据失败');
-        setLoading(false);
-      }
-    };
-
     fetchData();
   }, []);
+
+  const handleForumCreated = (newForum) => {
+    // 刷新板块列表
+    fetchData();
+  };
 
   if (loading) {
     return (
@@ -51,8 +62,22 @@ const ForumListPage = () => {
     <div className="forum-list-page container py-4">
       <div className="row mb-4">
         <div className="col-12">
-          <h2><i className="fas fa-list me-2"></i>板块列表</h2>
-          <p className="text-muted">选择感兴趣的板块，参与讨论交流</p>
+          <div className="d-flex justify-content-between align-items-center mb-3">
+            <div>
+              <h2><i className="fas fa-list me-2"></i>板块列表</h2>
+              <p className="text-muted mb-0">选择感兴趣的板块，参与讨论交流</p>
+            </div>
+            {isAdmin(user) && (
+              <Button 
+                variant="primary" 
+                onClick={() => setShowCreateModal(true)}
+                className="d-flex align-items-center"
+              >
+                <i className="fas fa-plus me-2"></i>
+                创建新板块
+              </Button>
+            )}
+          </div>
         </div>
       </div>
       
@@ -142,6 +167,13 @@ const ForumListPage = () => {
           </div>
         </div>
       </div>
+      
+      {/* 创建板块模态框 */}
+      <CreateForumModal 
+        show={showCreateModal}
+        onHide={() => setShowCreateModal(false)}
+        onForumCreated={handleForumCreated}
+      />
     </div>
   );
 };
