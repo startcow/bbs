@@ -8,29 +8,34 @@ from . import api
 
 @api.route('/posts', methods=['GET'])
 def get_posts():
-    page = request.args.get('page', 1, type=int)
-    per_page = request.args.get('per_page', 20, type=int)
-    sort_by = request.args.get('sort_by', 'latest', type=str)
+    try:
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 20, type=int)
+        sort_by = request.args.get('sort_by', 'latest', type=str)
 
-    query = Post.query
+        query = Post.query
 
-    if sort_by == 'latest':
-        query = query.order_by(Post.created_at.desc())
-    elif sort_by == 'popular':
-        # 示例：按点赞数降序排序，您可以根据需求调整排序规则
-        query = query.order_by(Post.like_count.desc())
-    # 可以添加更多排序选项，如按评论数、浏览数等
+        if sort_by == 'latest':
+            query = query.order_by(Post.created_at.desc())
+        elif sort_by == 'popular':
+            # 示例：按点赞数降序排序，您可以根据需求调整排序规则
+            query = query.order_by(Post.like_count.desc())
+        # 可以添加更多排序选项，如按评论数、浏览数等
 
-    pagination = query.paginate(
-        page=page, per_page=per_page, error_out=False
-    )
+        pagination = query.paginate(
+            page=page, per_page=per_page, error_out=False
+        )
 
-    return jsonify({
-        'posts': [post.to_dict() for post in pagination.items],
-        'total': pagination.total,
-        'pages': pagination.pages,
-        'current_page': pagination.page
-    })
+        return jsonify({
+            'posts': [post.to_dict() for post in pagination.items],
+            'total': pagination.total,
+            'pages': pagination.pages,
+            'current_page': pagination.page
+        })
+    except Exception as e:
+        # 捕获任何异常并返回错误信息
+        print(f"获取帖子列表失败: {e}") # 在后端控制台打印详细错误
+        return jsonify({'message': f'获取帖子列表失败: {str(e)}'}), 500
 
 @api.route('/posts/<int:post_id>', methods=['GET'])
 @jwt_required()

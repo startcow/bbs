@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import './ChatWindow.css';
 import api from '../api';
+import { useSelector } from 'react-redux';
 
 const ChatWindow = ({ onClose, onMaximize }) => {
     const windowRef = useRef(null);
@@ -9,57 +10,52 @@ const ChatWindow = ({ onClose, onMaximize }) => {
     const [offset, setOffset] = useState({ x: 0, y: 0 });
     const [maximized, setMaximized] = useState(false);
     const [selectedUser, setSelectedUser] = useState(null);
-    const [messages, setMessages] = useState({});
+    const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState([]);
     const [friendRequests, setFriendRequests] = useState([]);
     const [friends, setFriends] = useState([]);
-    const [sentRequests, setSentRequests] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [sentRequests, setSentRequests] = useState([]);
+
+    const currentUser = useSelector(state => state.auth.user);
 
     const PROCESSED_SENT_REQUESTS_KEY = 'processedSentRequests';
 
-    const mockMessages = {
-        'user1': [
-            { sender: 'user1', content: '你好，请问作业做完了吗？', timestamp: '24/6/13' },
-            { sender: 'me', content: '还没呢，正在做。', timestamp: '24/6/13' }
-        ],
-        'user2': [
-            { sender: 'user2', content: '今晚一起打球吗？🏀', timestamp: '24/6/12' },
-            { sender: 'me', content: '好啊，几点？', timestamp: '24/6/12' }
-        ],
-        'admin': [
-            { sender: 'admin', content: '欢迎使用聊天功能！', timestamp: '24/6/14' },
-            { sender: 'me', content: '谢谢！', timestamp: '24/6/14' }
-        ]
+    const handleUserClick = (user) => {
+        setSelectedUser(user);
+        setMessages([]);
     };
 
-    const mockUsers = [
-        { id: 1, username: 'user1', nickname: '用户1', avatar: 'https://i.imgtg.com/2023/05/19/ZQw6v.jpg' },
-        { id: 2, username: 'user2', nickname: '用户2', avatar: 'https://i.imgtg.com/2023/05/19/ZQw6v.jpg' },
-        { id: 3, username: 'admin', nickname: '管理员', avatar: 'https://i.imgtg.com/2023/05/19/ZQw6v.jpg' }
-    ];
-
-    const handleUserClick = (username) => {
-        setSelectedUser(username);
-        if (!messages[username]) {
-            setMessages(prev => ({ ...prev, [username]: mockMessages[username] || [] }));
-        }
-    };
-
-    const handleSendMessage = () => {
+    const handleSendMessage = async () => {
         if (!newMessage.trim() || !selectedUser) return;
-        const newMsg = {
-            sender: 'me',
-            content: newMessage,
-            timestamp: new Date().toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit', year: '2-digit' })
-        };
-        setMessages(prev => ({
-            ...prev,
-            [selectedUser]: [...(prev[selectedUser] || []), newMsg]
-        }));
-        setNewMessage('');
+        if (!currentUser) {
+            alert('请先登录再发送消息！');
+            return;
+        }
+
+        try {
+            const response = await api.post('/messages', {
+                receiver_id: selectedUser.id,
+                content: newMessage
+            });
+
+            console.log('发送消息API响应:', response.data);
+
+            setMessages(prev => [...prev, {
+                id: response.data.id,
+                sender_id: currentUser.id,
+                receiver_id: selectedUser.id,
+                content: newMessage,
+                timestamp: new Date().toISOString(),
+                is_read: false
+            }]);
+            setNewMessage('');
+        } catch (error) {
+            console.error('发送消息失败:', error);
+            alert(error.response?.data?.error || '发送消息失败');
+        }
     };
 
     const onMouseDown = (e) => {
@@ -126,7 +122,6 @@ const ChatWindow = ({ onClose, onMaximize }) => {
             try {
                 const response = await api.get(`/users/search?query=${encodeURIComponent(query)}`);
                 console.log('搜索用户API完整响应对象:', response);
-                console.log('搜索用户API响应数据:', response.data);
                 setSearchResults(response || []);
             } catch (error) {
                 console.error('搜索用户失败:', error);
@@ -202,7 +197,6 @@ const ChatWindow = ({ onClose, onMaximize }) => {
             const response = await api.get('/friends/requests');
             console.log('获取好友申请列表API响应:', response);
             setFriendRequests(response || []);
-            console.log('friendRequests 状态已更新为:', response || []);
         } catch (error) {
             console.error('获取好友申请列表失败:', error);
             setFriendRequests([]);
@@ -251,6 +245,18 @@ const ChatWindow = ({ onClose, onMaximize }) => {
         }
     };
 
+    const fetchMessages = async (userId) => {
+        if (!userId) return;
+        try {
+            const response = await api.get(`/messages/${userId}`);
+            console.log(`获取与用户 ${userId} 的聊天记录API响应:`, response);
+            setMessages(response || []);
+        } catch (error) {
+            console.error('获取聊天记录失败:', error);
+            setMessages([]);
+        }
+    };
+
     useEffect(() => {
         console.log('ChatWindow useEffect 触发');
         fetchFriends();
@@ -261,11 +267,22 @@ const ChatWindow = ({ onClose, onMaximize }) => {
             fetchFriends();
             fetchFriendRequests();
             fetchSentFriendRequests();
-        }, 15000);
+            if (selectedUser) {
+                fetchMessages(selectedUser.id);
+            }
+        }, 5000);
 
         return () => clearInterval(intervalId);
 
-    }, []);
+    }, [selectedUser]);
+
+    useEffect(() => {
+        if (selectedUser) {
+            fetchMessages(selectedUser.id);
+        } else {
+            setMessages([]);
+        }
+    }, [selectedUser]);
 
     const displaySearchResults = Array.isArray(searchResults) ? searchResults : [];
     const displayFriendRequests = Array.isArray(friendRequests) ? friendRequests : [];
@@ -293,7 +310,7 @@ const ChatWindow = ({ onClose, onMaximize }) => {
                 <div className="chat-sidebar">
                     <div className="chat-profile">
                         <img className="chat-avatar" src="https://i.imgtg.com/2023/05/19/ZQw6v.jpg" alt="avatar" />
-                        <div className="chat-username"> 是我啊 <span className="chat-verified">✔</span></div>
+                        <div className="chat-username"> {currentUser?.nickname || currentUser?.username} <span className="chat-verified">✔</span></div>
                     </div>
                     <div className="chat-search">
                         <input
@@ -313,7 +330,7 @@ const ChatWindow = ({ onClose, onMaximize }) => {
                                 <div key={user.id} className="search-result-item">
                                     <img src={user.avatar} alt={user.username} />
                                     <div className="search-result-info">
-                                        <div className="search-result-name">{user.nickname}</div>
+                                        <div className="search-result-name">{user.nickname || user.username}</div>
                                         <div className="search-result-username">{user.username}</div>
                                     </div>
                                     {friends && !friends.some(f => f.id === user.id) && (
@@ -335,7 +352,7 @@ const ChatWindow = ({ onClose, onMaximize }) => {
                                 <div key={request.id} className="friend-request-item">
                                     <img src={request.sender.avatar} alt={request.sender.username} />
                                     <div className="friend-request-info">
-                                        <div className="friend-request-name">{request.sender.nickname}</div>
+                                        <div className="friend-request-name">{request.sender.nickname || request.sender.username}</div>
                                         <div className="friend-request-username">{request.sender.username}</div>
                                     </div>
                                     <div className="friend-request-actions">
@@ -361,10 +378,14 @@ const ChatWindow = ({ onClose, onMaximize }) => {
                             <div className="chat-loading">加载中...</div>
                         ) : friends && friends.length > 0 ? (
                             friends.map(friend => (
-                                <div key={friend.id} className="chat-friend-item" onClick={() => handleUserClick(friend.username)}>
+                                <div
+                                    key={friend.id}
+                                    className={`chat-friend-item ${selectedUser && selectedUser.id === friend.id ? 'chat-friend-item-active' : ''}`}
+                                    onClick={() => handleUserClick(friend)}
+                                >
                                     <img className="chat-friend-avatar" src={friend.avatar} alt={friend.username} />
                                     <div className="chat-friend-info">
-                                        <div className="chat-friend-name">{friend.nickname}</div>
+                                        <div className="chat-friend-name">{friend.nickname || friend.username}</div>
                                         <div className="chat-friend-msg">点击开始聊天</div>
                                     </div>
                                     <button
@@ -387,12 +408,26 @@ const ChatWindow = ({ onClose, onMaximize }) => {
                     {selectedUser ? (
                         <>
                             <div className="chat-messages" style={{ height: 'calc(100% - 60px)', overflowY: 'auto', padding: '10px' }}>
-                                {messages[selectedUser]?.map((msg, index) => (
-                                    <div key={index} style={{ marginBottom: '10px', textAlign: msg.sender === 'me' ? 'right' : 'left' }}>
-                                        <div style={{ display: 'inline-block', padding: '8px 12px', borderRadius: '8px', background: msg.sender === 'me' ? '#1aad19' : '#f0f0f0', color: msg.sender === 'me' ? 'white' : 'black' }}>
+                                {messages.map((msg, index) => (
+                                    <div
+                                        key={msg.id || index}
+                                        style={{
+                                            marginBottom: '10px',
+                                            textAlign: msg.sender_id === currentUser.id ? 'right' : 'left'
+                                        }}
+                                    >
+                                        <div style={{
+                                            display: 'inline-block',
+                                            padding: '8px 12px',
+                                            borderRadius: '8px',
+                                            background: msg.sender_id === currentUser.id ? '#1aad19' : '#f0f0f0',
+                                            color: msg.sender_id === currentUser.id ? 'white' : 'black'
+                                        }}>
                                             {msg.content}
                                         </div>
-                                        <div style={{ fontSize: '12px', color: '#888', marginTop: '4px' }}>{msg.timestamp}</div>
+                                        <div style={{ fontSize: '12px', color: '#888', marginTop: '4px' }}>
+                                            {new Date(msg.timestamp + 'Z').toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
+                                        </div>
                                     </div>
                                 ))}
                             </div>
@@ -403,6 +438,11 @@ const ChatWindow = ({ onClose, onMaximize }) => {
                                     onChange={(e) => setNewMessage(e.target.value)}
                                     placeholder="输入消息..."
                                     style={{ flex: 1, padding: '8px', borderRadius: '4px', border: '1px solid #ddd', marginRight: '10px' }}
+                                    onKeyPress={(e) => {
+                                        if (e.key === 'Enter') {
+                                            handleSendMessage();
+                                        }
+                                    }}
                                 />
                                 <button onClick={handleSendMessage} style={{ padding: '8px 16px', background: '#1aad19', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>发送</button>
                             </div>
