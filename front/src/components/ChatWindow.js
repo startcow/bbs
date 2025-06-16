@@ -185,7 +185,7 @@ const ChatWindow = ({ onClose, onMaximize }) => {
         try {
             setIsLoading(true);
             const response = await api.get('/friends/requests');
-            setFriendRequests(response.data || []);
+            setFriendRequests(response || []);
         } catch (error) {
             console.error('获取好友申请列表失败:', error);
             setFriendRequests([]);
@@ -204,6 +204,8 @@ const ChatWindow = ({ onClose, onMaximize }) => {
 
     console.log('ChatWindow组件渲染 - searchResults:', searchResults, 'length:', searchResults?.length);
     console.log('ChatWindow组件渲染 - displaySearchResults:', displaySearchResults, 'length:', displaySearchResults.length);
+    console.log('ChatWindow组件渲染 - friendRequests:', friendRequests, 'length:', friendRequests?.length);
+    console.log('ChatWindow组件渲染 - displayFriendRequests:', displayFriendRequests, 'length:', displayFriendRequests.length);
 
     return (
         <div

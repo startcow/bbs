@@ -158,7 +158,11 @@ def handle_friend_request(request_id):
     
     friend_request = FriendRequest.query.get_or_404(request_id)
     
-    if friend_request.receiver_id != current_user_id:
+    print(f"DEBUG: friend_request.receiver_id: {friend_request.receiver_id}, type: {type(friend_request.receiver_id)}")
+    print(f"DEBUG: current_user_id: {current_user_id}, type: {type(current_user_id)}")
+
+    # 将current_user_id转换为整数进行比较
+    if friend_request.receiver_id != int(current_user_id):
         return jsonify({'error': '无权处理此申请'}), 403
         
     if friend_request.status != 'pending':
@@ -208,21 +212,41 @@ def get_friends():
 def get_friend_requests():
     current_user_id = get_jwt_identity()
     
-    requests = FriendRequest.query.filter_by(
+    friend_requests = FriendRequest.query.filter_by(
         receiver_id=current_user_id,
         status='pending'
     ).all()
     
-    return jsonify([{
-        'id': req.id,
-        'sender': {
-            'id': req.sender.id,
-            'username': req.sender.username,
-            'nickname': req.sender.nickname,
-            'avatar': req.sender.avatar
-        },
-        'created_at': req.created_at.isoformat()
-    } for req in requests])
+    requests_data = []
+    for req in friend_requests:
+        sender = User.query.get(req.sender_id)
+        if sender:
+            requests_data.append({
+                'id': req.id,
+                'sender_id': req.sender_id,
+                'receiver_id': req.receiver_id,
+                'status': req.status,
+                'timestamp': req.created_at.isoformat(),
+                'sender': {
+                    'id': sender.id,
+                    'username': sender.username,
+                    'nickname': sender.nickname,
+                    'avatar': sender.avatar
+                }
+            })
+            
+    return jsonify(requests_data)
+
+# 获取未处理好友申请数量
+@api.route('/friends/requests/count', methods=['GET'])
+@jwt_required()
+def get_pending_friend_requests_count():
+    current_user_id = get_jwt_identity()
+    count = FriendRequest.query.filter_by(
+        receiver_id=current_user_id,
+        status='pending'
+    ).count()
+    return jsonify({'count': count})
 
 # 删除好友
 @api.route('/friends/<int:friend_id>', methods=['DELETE'])
@@ -230,9 +254,17 @@ def get_friend_requests():
 def delete_friend(friend_id):
     current_user_id = get_jwt_identity()
     
-    # 删除双向好友关系
-    Friendship.query.filter_by(user_id=current_user_id, friend_id=friend_id).delete()
-    Friendship.query.filter_by(user_id=friend_id, friend_id=current_user_id).delete()
+    # 查找并删除双向好友关系
+    friendship1 = Friendship.query.filter_by(user_id=current_user_id, friend_id=friend_id).first()
+    friendship2 = Friendship.query.filter_by(user_id=friend_id, friend_id=current_user_id).first()
     
+    if not friendship1 and not friendship2:
+        return jsonify({'error': '好友关系不存在'}), 404
+        
+    if friendship1:
+        db.session.delete(friendship1)
+    if friendship2:
+        db.session.delete(friendship2)
+        
     db.session.commit()
     return jsonify({'message': '好友已删除'})
