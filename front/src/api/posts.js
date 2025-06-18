@@ -58,7 +58,7 @@ export const likeComment = (commentId) => {
 // 创建帖子
 export const createPost = async (data) => {
   const response = await api.post('/posts', data);
-  return response.data;
+  return response;
 };
 
 // 获取最新帖子
